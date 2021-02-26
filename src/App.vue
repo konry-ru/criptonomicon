@@ -51,6 +51,10 @@
         <div
           v-for="t in tickers"
           :key="t.name"
+					@click="sel = t"
+					:class="{
+						'border-4': sel === t,
+					}"
           class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
         >
           <div class="px-4 py-5 sm:p-6 text-center">
@@ -63,7 +67,7 @@
           </div>
           <div class="w-full border-t border-gray-200"></div>
           <button
-            @click="handelDelete(t)"
+            @click.stop="handelDelete(t)"
             class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
           >
             <svg
@@ -88,9 +92,9 @@
 
       <hr class="w-full border-t border-gray-600 my-4" />
 
-      <section class="relative">
+      <section v-if="sel && tickers.length" class="relative">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          VUE - USD
+          {{sel.name}} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div class="bg-purple-800 border w-10 h-24"></div>
@@ -98,7 +102,11 @@
           <div class="bg-purple-800 border w-10 h-48"></div>
           <div class="bg-purple-800 border w-10 h-16"></div>
         </div>
-        <button type="button" class="absolute top-0 right-0">
+        <button
+					@click="sel = null"
+					type="button"
+					class="absolute top-0 right-0"
+				>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -135,6 +143,7 @@ export default {
     return {
       ticker: null,
       tickers: [],
+			sel: null,
     }
   },
 
@@ -149,6 +158,7 @@ export default {
     },
 
     handelDelete(tickerToRemove) {
+			if(tickerToRemove === this.sel) this.sel = null;
       this.tickers = this.tickers.filter(t => t !== tickerToRemove)
     }
   }
