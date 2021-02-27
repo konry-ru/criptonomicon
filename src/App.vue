@@ -7,7 +7,7 @@
           <div class="max-w-xs">
             <label for="wallet" class="block text-sm font-medium text-gray-700"
               >Тикер</label
-            >{{graph}}{{sel}}
+            >
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
@@ -97,10 +97,11 @@
           {{sel.name}} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
-          <div class="bg-purple-800 border w-10 h-24"></div>
-          <div class="bg-purple-800 border w-10 h-32"></div>
-          <div class="bg-purple-800 border w-10 h-48"></div>
-          <div class="bg-purple-800 border w-10 h-16"></div>
+          <div
+          v-for="(bar, idx) in normolizeGraph()"
+          :key="idx"
+          :style="{height: `${bar}%`}"
+          class="bg-purple-800 border w-10"></div>
         </div>
         <button
 					@click="sel = null"
@@ -176,8 +177,23 @@ export default {
     },
 
     handelSelect(tickerToSelect) {
-      if(this.graph.length) this.graph.length = 0;
+      this.graph = [];
       this.sel = tickerToSelect;
+    },
+
+    normolizeGraph() {
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+      let result;
+      if (maxValue === minValue) {
+        result = this.graph.map(price => price * 50 / price);
+      } 
+      else {
+        result = this.graph.map(
+          price => 5 + ((price - minValue) * 95 / (maxValue - minValue))
+        );
+      }
+      return result;
     }
   }
 };
