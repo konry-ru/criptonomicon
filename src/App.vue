@@ -7,7 +7,7 @@
           <div class="max-w-xs">
             <label for="wallet" class="block text-sm font-medium text-gray-700"
               >Тикер</label
-            >
+            >{{graph}}{{sel}}
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
@@ -51,7 +51,7 @@
         <div
           v-for="t in tickers"
           :key="t.name"
-					@click="sel = t"
+					@click="handelSelect(t)"
 					:class="{
 						'border-4': sel === t,
 					}"
@@ -144,30 +144,40 @@ export default {
       ticker: null,
       tickers: [],
 			sel: null,
+      graph: [],
     }
   },
 
   methods: {
+
     add() {
-      const newTicker = {
+      const currentTicker = {
         name: this.ticker,
         price: '--'
       }
-      this.tickers.push(newTicker);
-			setInterval(async () => {
-				const f = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD&api_key=3df379aa005a2527d7bc50a00816f82e274b21ac02306f8f8206a4dfc692087c`);
+      this.tickers.push(currentTicker);
+
+			setInterval( async () => {
+				const f = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&api_key=3df379aa005a2527d7bc50a00816f82e274b21ac02306f8f8206a4dfc692087c`);
 				const data = await f.json();
 
-				console.log(data.USD)
-				this.tickers.find(t => t.name === newTicker.name).price = data.USD;
+				this.tickers.find(t => t.name === currentTicker.name).price = data.USD > 1 ? data.USD.toFixed(1) : data.USD.toPrecision(2);
+
+        if( currentTicker.name === this.sel.name ) this.graph.push(data.USD);
 			}
 				, 3000);
+
       this.ticker = '';
     },
 
     handelDelete(tickerToRemove) {
 			if(tickerToRemove === this.sel) this.sel = null;
-      this.tickers = this.tickers.filter(t => t !== tickerToRemove)
+      this.tickers = this.tickers.filter(t => t !== tickerToRemove);
+    },
+
+    handelSelect(tickerToSelect) {
+      if(this.graph.length) this.graph.length = 0;
+      this.sel = tickerToSelect;
     }
   }
 };
