@@ -10,7 +10,7 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
-                v-on:keydown="hasTicker = false"
+                v-on:keydown="handleInput"
                 v-on:keydown.enter="add"
                 type="text"
                 name="wallet"
@@ -23,24 +23,11 @@
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
+                v-for="(hint, idx) in hints"
+                :key="idx"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                BTC
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                DOGE
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                BCH
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                CHD
+              {{hint}}
               </span>
             </div>
             <div v-if="hasTicker" class="text-sm text-red-600">
@@ -77,7 +64,7 @@
           <div
             v-for="t in tickers"
             :key="t.name"
-            @click="handelSelect(t)"
+            @click="handleSelect(t)"
             :class="{
               'border-4': sel === t,
             }"
@@ -93,7 +80,7 @@
             </div>
             <div class="w-full border-t border-gray-200"></div>
             <button
-              @click.stop="handelDelete(t)"
+              @click.stop="handleDelete(t)"
               class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
             >
               <svg
@@ -167,9 +154,10 @@ export default {
 
   data() {
     return {
-      ticker: null,
+      ticker: "",
       tickers: [],
       allTickers: [],
+      hints: ['BTC', 'DOGE', 'LSD'],
       sel: null,
       graph: [],
       hasTicker: false,
@@ -192,6 +180,7 @@ export default {
       console.log(err);
     })
   },
+  
 
   methods: {
     add() {
@@ -218,15 +207,26 @@ export default {
         }, 3000);
 
         this.ticker = "";
+        this.hints = [];
       }
     },
 
-    handelDelete(tickerToRemove) {
+    handleInput(event) {
+      this.hasTicker = false;
+      const code = event.keyCode;
+      if(code >= 65 && code <= 90) {
+        const list = this.allTickers.filter(t => t.startsWith(this.ticker + event.key));
+        const sortedList = list.sort(item => item.length)
+        this.hints = sortedList;
+      }
+    },
+
+    handleDelete(tickerToRemove) {
       if (tickerToRemove === this.sel) this.sel = null;
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
     },
 
-    handelSelect(tickerToSelect) {
+    handleSelect(tickerToSelect) {
       this.graph = [];
       this.sel = tickerToSelect;
     },
