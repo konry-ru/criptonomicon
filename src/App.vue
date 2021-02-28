@@ -157,11 +157,17 @@ export default {
       ticker: "",
       tickers: [],
       allTickers: [],
-      hints: ['BTC', 'DOGE', 'LSD'],
       sel: null,
       graph: [],
       hasTicker: false,
     };
+  },
+
+  computed: {
+    hints: function() {
+      const hintsList = this.allTickers.filter(t => t.startsWith(this.ticker));
+      return hintsList;
+    }
   },
 
   created: function() {
@@ -181,6 +187,10 @@ export default {
     })
   },
   
+  updated: function() {
+
+
+  },
 
   methods: {
     add() {
@@ -208,16 +218,6 @@ export default {
 
         this.ticker = "";
         this.hints = [];
-      }
-    },
-
-    handleInput(event) {
-      this.hasTicker = false;
-      const code = event.keyCode;
-      if(code >= 65 && code <= 90) {
-        const list = this.allTickers.filter(t => t.startsWith(this.ticker + event.key));
-        const sortedList = list.sort(item => item.length)
-        this.hints = sortedList;
       }
     },
 
