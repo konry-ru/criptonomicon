@@ -169,10 +169,28 @@ export default {
     return {
       ticker: null,
       tickers: [],
+      allTickers: [],
       sel: null,
       graph: [],
       hasTicker: false,
     };
+  },
+
+  created: function() {
+    
+    async function getCoinsList(url) {
+      const res = await fetch(url);
+      return await res.json();
+    }
+    const coinsUrl = 'https://min-api.cryptocompare.com/data/all/coinlist?summary=true';
+
+    getCoinsList(coinsUrl)
+    .then(res => {
+      this.allTickers = Object.values(res.Data).map(item => item.Symbol);
+    })
+    .catch(err => {
+      console.log(err);
+    })
   },
 
   methods: {
