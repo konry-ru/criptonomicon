@@ -167,11 +167,9 @@ export default {
 
   computed: {
     hints: function() {
+			
       const hintsList = this.allTickers.filter(t => t.startsWith(this.ticker));
-      const sortedHintsList = hintsList.sort();
-      const hintsOutput = sortedHintsList.slice(0, 4);
-      // console.log(hintsOutput)
-      return this.ticker === '' ? [] : hintsOutput;
+      return this.ticker === '' ? [] : hintsList.sort().slice(0, 4);
     }
   },
 
