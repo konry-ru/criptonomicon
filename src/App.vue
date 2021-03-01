@@ -10,10 +10,10 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
-                v-on:keydown="hasTicker=false"
+                v-on:keydown="hasTicker = false"
                 v-on:keydown.enter="add"
                 type="text"
-								autocomplete="off"
+                autocomplete="off"
                 name="wallet"
                 id="wallet"
                 class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
@@ -26,10 +26,10 @@
               <span
                 v-for="(hint, idx) in hints"
                 :key="idx"
-								@click="handleHint(hint)"
+                @click="handleHint(hint)"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-              {{hint}}
+                {{ hint }}
               </span>
             </div>
             <div v-if="hasTicker" class="text-sm text-red-600">
@@ -133,7 +133,7 @@
             x="0"
             y="0"
             viewBox="0 0 511.76 511.76"
-            style="enable-background: new 0 0 512 512;"
+            style="enable-background: new 0 0 512 512"
             xml:space="preserve"
           >
             <g>
@@ -166,28 +166,29 @@ export default {
   },
 
   computed: {
-    hints: function() {
-			
-      const hintsList = this.allTickers.filter(t => t.startsWith(this.ticker));
-      return this.ticker === '' ? [] : hintsList.sort().slice(0, 4);
-    }
+    hints: function () {
+      const hintsList = this.allTickers.filter((t) =>
+        t.startsWith(this.ticker)
+      );
+      return this.ticker === "" ? [] : hintsList.sort().slice(0, 4);
+    },
   },
 
-  created: function() {
-    
+  created: function () {
     async function getCoinsList(url) {
       const res = await fetch(url);
       return await res.json();
     }
-    const coinsUrl = 'https://min-api.cryptocompare.com/data/all/coinlist?summary=true';
+    const coinsUrl =
+      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true";
 
     getCoinsList(coinsUrl)
-    .then(res => {
-      this.allTickers = Object.values(res.Data).map(item => item.Symbol);
-    })
-    .catch(err => {
-      console.log(err);
-    })
+      .then((res) => {
+        this.allTickers = Object.values(res.Data).map((item) => item.Symbol);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   },
 
   methods: {
@@ -229,10 +230,10 @@ export default {
       this.sel = tickerToSelect;
     },
 
-		handleHint(hint) {
-			this.ticker = hint;
-			this.add();
-		},
+    handleHint(hint) {
+      this.ticker = hint;
+      this.add();
+    },
 
     normolizeGraph() {
       const maxValue = Math.max(...this.graph);
