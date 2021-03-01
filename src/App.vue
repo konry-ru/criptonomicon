@@ -10,7 +10,7 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
-                v-on:keydown="handleInput"
+                v-on:keydown="hasTicker=false"
                 v-on:keydown.enter="add"
                 type="text"
                 name="wallet"
@@ -167,8 +167,8 @@ export default {
     hints: function() {
       const hintsList = this.allTickers.filter(t => t.startsWith(this.ticker));
       const sortedHintsList = hintsList.sort();
-      const hintsOutput = sortedHintsList.slice(3);
-      console.log(hintsOutput)
+      const hintsOutput = sortedHintsList.slice(0, 4);
+      // console.log(hintsOutput)
       return this.ticker === '' ? [] : hintsOutput;
     }
   },
@@ -214,9 +214,9 @@ export default {
           const data = await f.json();
 
           this.tickers.find((t) => t.name === currentTicker.name).price =
-            data.USD > 1 ? data.USD.toFixed(1) : data.USD.toPrecision(2);
+            data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
 
-          if (currentTicker.name === this.sel.name) this.graph.push(data.USD);
+          if (currentTicker.name === this.sel?.name) this.graph.push(data.USD);
         }, 3000);
 
         this.ticker = "";
