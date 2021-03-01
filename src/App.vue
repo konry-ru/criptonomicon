@@ -166,7 +166,10 @@ export default {
   computed: {
     hints: function() {
       const hintsList = this.allTickers.filter(t => t.startsWith(this.ticker));
-      return hintsList;
+      const sortedHintsList = hintsList.sort();
+      const hintsOutput = sortedHintsList.slice(3);
+      console.log(hintsOutput)
+      return this.ticker === '' ? [] : hintsOutput;
     }
   },
 
