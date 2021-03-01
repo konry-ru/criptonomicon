@@ -167,12 +167,18 @@ export default {
 
   computed: {
     hints: function () {
-      const hintsList = this.allTickers.filter((t) =>
-        t.startsWith(this.ticker)
-      );
+      let hintsList = this.allTickers.filter((t) => t.startsWith(this.ticker));
       return this.ticker === "" ? [] : hintsList.sort().slice(0, 4);
     },
   },
+
+  // watch: {
+  // 	ticker: function(val) {
+  // 		const store = JSON.stringify(val);
+  // 		console.log(store);
+  // 		localStorage.setItem('tickers', store);
+  // 	}
+  // },
 
   created: function () {
     async function getCoinsList(url) {
@@ -189,6 +195,22 @@ export default {
       .catch((err) => {
         console.log(err);
       });
+
+    const savedTickers = localStorage.getItem("tickers");
+    this.tickers = JSON.parse(savedTickers);
+    this.tickers.forEach((tick) => {
+      setInterval(async () => {
+        const f = await fetch(
+          `https://min-api.cryptocompare.com/data/price?fsym=${tick.name}&tsyms=USD&api_key=3df379aa005a2527d7bc50a00816f82e274b21ac02306f8f8206a4dfc692087c`
+        );
+        const data = await f.json();
+
+        tick.price =
+          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+
+        if (tick.name === this.sel?.name) this.graph.push(data.USD);
+      }, 3000);
+    });
   },
 
   methods: {
@@ -215,6 +237,8 @@ export default {
           if (currentTicker.name === this.sel?.name) this.graph.push(data.USD);
         }, 3000);
 
+        this.storeTickers();
+
         this.ticker = "";
         this.hints = [];
       }
@@ -223,6 +247,8 @@ export default {
     handleDelete(tickerToRemove) {
       if (tickerToRemove === this.sel) this.sel = null;
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
+
+      this.storeTickers();
     },
 
     handleSelect(tickerToSelect) {
@@ -233,6 +259,11 @@ export default {
     handleHint(hint) {
       this.ticker = hint;
       this.add();
+    },
+
+    storeTickers() {
+      const store = JSON.stringify(this.tickers);
+      localStorage.setItem("tickers", store);
     },
 
     normolizeGraph() {
