@@ -200,6 +200,7 @@ export default {
       tickers: [],
       allTickers: [],
       filter: "",
+			page: 1,
       sel: null,
       graph: [],
       hasTicker: false,
@@ -251,7 +252,9 @@ export default {
 
   methods: {
     filteredTickers() {
-      return this.tickers.filter((t) => t.name.includes(this.filter));
+			const start = (this.page - 1) * 6;
+			const end = this.page * 6;
+      return this.tickers.filter((t) => t.name.includes(this.filter)).slice(start, end);
     },
 
     subscribeToUpdate(tickerName) {
@@ -262,10 +265,12 @@ export default {
         const data = await f.json();
 
         const currentTicker = this.tickers.find((t) => t.name === tickerName);
-        if (currentTicker) {
+        if (currentTicker && data.USD) {
           currentTicker.price =
             data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-        }
+        } else {
+					currentTicker.price = 'Not data';
+				}
 
         if (tickerName === this.sel?.name) this.graph.push(data.USD);
       }, 3000);
