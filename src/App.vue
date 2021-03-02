@@ -67,16 +67,16 @@
       <section>
         <div class="flex items-center max-w-lg">
           <button
-						v-if="page > 1"
-						@click="page = page - 1"
+            v-if="page > 1"
+            @click="page = page - 1"
             type="button"
             class="my-4 mr-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             Назад
           </button>
           <button
-						v-if="hasNextPage"
-						@click="page = page + 1"
+            v-if="hasNextPage"
+            @click="page = page + 1"
             type="button"
             class="my-4 mr-8 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
@@ -101,7 +101,10 @@
             />
           </div>
 
-					<div class="flex font-medium text-gray-700"><p class="mr-2">Страница</p> {{page}}</div>
+          <div class="flex font-medium text-gray-700">
+            <p class="mr-2">Страница</p>
+            {{ page }}
+          </div>
         </div>
       </section>
 
@@ -206,25 +209,37 @@ export default {
       tickers: [],
       allTickers: [],
       filter: "",
-			page: 1,
+      page: 1,
       sel: null,
       graph: [],
       hasTicker: false,
-			notInTickersList: false,
-			hasNextPage: true,
+      notInTickersList: false,
+      hasNextPage: true,
     };
   },
 
-	watch: {
-		ticker: function() {
-			if(this.ticker === '') {
-				this.notInTickersList = false;
-			}
-		},
-		filter: function() {
-			this.page = 1;
-		}
-	},
+  watch: {
+    ticker: function () {
+      if (this.ticker === "") {
+        this.notInTickersList = false;
+      }
+    },
+    filter: function () {
+      this.page = 1;
+      window.history.pushState(
+        null,
+        document.title,
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
+    },
+    page() {
+      window.history.pushState(
+        null,
+        document.title,
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
+    },
+  },
 
   computed: {
     hints: function () {
@@ -234,6 +249,16 @@ export default {
   },
 
   created: function () {
+
+		const windowData = Object.fromEntries(new URL(location).searchParams.entries());
+
+		if(windowData.filter) {
+			this.filter = windowData.filter;
+		}
+		if(windowData.page) {
+			this.page = windowData.page;
+		}
+		
     async function getCoinsList(url) {
       const res = await fetch(url);
       return await res.json();
@@ -262,11 +287,13 @@ export default {
 
   methods: {
     filteredTickers() {
-			const start = (this.page - 1) * 6;
-			const end = this.page * 6;
+      const start = (this.page - 1) * 6;
+      const end = this.page * 6;
 
-			const filteredList = this.tickers.filter((t) => t.name.includes(this.filter));
-			this.hasNextPage = end >= filteredList.length ? false : true;
+      const filteredList = this.tickers.filter((t) =>
+        t.name.includes(this.filter)
+      );
+      this.hasNextPage = end >= filteredList.length ? false : true;
 
       return filteredList.slice(start, end);
     },
@@ -283,8 +310,8 @@ export default {
           currentTicker.price =
             data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
         } else {
-					currentTicker.price = 'Not data';
-				}
+          currentTicker.price = "Not data";
+        }
 
         if (tickerName === this.sel?.name) this.graph.push(data.USD);
       }, 3000);
@@ -299,7 +326,7 @@ export default {
       this.subscribeToUpdate(currentTicker.name);
 
       this.hasTicker = this.tickers.find((t) => t.name === this.ticker);
-			this.notInTickersList = !this.allTickers.includes(currentTicker.name);
+      this.notInTickersList = !this.allTickers.includes(currentTicker.name);
 
       this.filter = "";
 
