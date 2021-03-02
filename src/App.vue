@@ -220,6 +220,9 @@ export default {
 			if(this.ticker === '') {
 				this.notInTickersList = false;
 			}
+		},
+		filter: function() {
+			this.page = 1;
 		}
 	},
 
