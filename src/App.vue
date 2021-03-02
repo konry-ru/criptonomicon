@@ -65,14 +65,18 @@
       <hr class="w-full border-t border-gray-600 my-4" />
 
       <section>
-        <div class="flex items-center max-w-md">
+        <div class="flex items-center max-w-lg">
           <button
+						v-if="page > 1"
+						@click="page = page - 1"
             type="button"
             class="my-4 mr-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             Назад
           </button>
           <button
+						v-if="hasNextPage"
+						@click="page = page + 1"
             type="button"
             class="my-4 mr-8 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
@@ -85,7 +89,7 @@
             >Фильтрация</label
           >
 
-          <div class="mt-1 relative rounded-md shadow-md">
+          <div class="mt-1 mr-8 relative rounded-md shadow-md">
             <input
               v-model="filter"
               type="text"
@@ -96,6 +100,8 @@
               placeholder=""
             />
           </div>
+
+					<div class="flex font-medium text-gray-700"><p class="mr-2">Страница</p> {{page}}</div>
         </div>
       </section>
 
@@ -205,6 +211,7 @@ export default {
       graph: [],
       hasTicker: false,
 			notInTickersList: false,
+			hasNextPage: true,
     };
   },
 
@@ -254,7 +261,11 @@ export default {
     filteredTickers() {
 			const start = (this.page - 1) * 6;
 			const end = this.page * 6;
-      return this.tickers.filter((t) => t.name.includes(this.filter)).slice(start, end);
+
+			const filteredList = this.tickers.filter((t) => t.name.includes(this.filter));
+			this.hasNextPage = end >= filteredList.length ? false : true;
+
+      return filteredList.slice(start, end);
     },
 
     subscribeToUpdate(tickerName) {
