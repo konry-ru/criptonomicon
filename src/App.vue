@@ -182,7 +182,7 @@
             x="0"
             y="0"
             viewBox="0 0 511.76 511.76"
-            style="enable-background: new 0 0 512 512"
+            style="enable-background: new 0 0 512 512;"
             xml:space="preserve"
           >
             <g>
@@ -224,6 +224,7 @@ export default {
         this.notInTickersList = false;
       }
     },
+
     filter: function () {
       this.page = 1;
       window.history.pushState(
@@ -232,6 +233,7 @@ export default {
         `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
       );
     },
+
     page() {
       window.history.pushState(
         null,
@@ -249,16 +251,17 @@ export default {
   },
 
   created: function () {
+    const windowData = Object.fromEntries(
+      new URL(location).searchParams.entries()
+    );
 
-		const windowData = Object.fromEntries(new URL(location).searchParams.entries());
+    if (windowData.filter) {
+      this.filter = windowData.filter;
+    }
+    if (windowData.page) {
+      this.page = windowData.page;
+    }
 
-		if(windowData.filter) {
-			this.filter = windowData.filter;
-		}
-		if(windowData.page) {
-			this.page = windowData.page;
-		}
-		
     async function getCoinsList(url) {
       const res = await fetch(url);
       return await res.json();
