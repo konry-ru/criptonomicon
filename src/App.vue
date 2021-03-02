@@ -35,6 +35,9 @@
             <div v-if="hasTicker" class="text-sm text-red-600">
               Такой тикер уже добавлен
             </div>
+            <div v-if="notInTickersList" class="text-sm text-red-600">
+              Такого тикера нет в списке
+            </div>
           </div>
         </div>
         <button
@@ -59,12 +62,49 @@
         </button>
       </section>
 
+      <hr class="w-full border-t border-gray-600 my-4" />
+
+      <section>
+        <div class="flex items-center max-w-md">
+          <button
+            type="button"
+            class="my-4 mr-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Назад
+          </button>
+          <button
+            type="button"
+            class="my-4 mr-8 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Вперед
+          </button>
+
+          <label
+            for="filter"
+            class="mr-4 block text-sm font-medium text-gray-700"
+            >Фильтрация</label
+          >
+
+          <div class="mt-1 relative rounded-md shadow-md">
+            <input
+              v-model="filter"
+              type="text"
+              autocomplete="off"
+              name="filter"
+              id="filter"
+              class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
+              placeholder=""
+            />
+          </div>
+        </div>
+      </section>
+
       <template v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
 
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t in tickers"
+            v-for="t in filteredTickers()"
             :key="t.name"
             @click="handleSelect(t)"
             :class="{
@@ -159,11 +199,21 @@ export default {
       ticker: "",
       tickers: [],
       allTickers: [],
+      filter: "",
       sel: null,
       graph: [],
       hasTicker: false,
+			notInTickersList: false,
     };
   },
+
+	watch: {
+		ticker: function() {
+			if(this.ticker === '') {
+				this.notInTickersList = false;
+			}
+		}
+	},
 
   computed: {
     hints: function () {
@@ -200,6 +250,10 @@ export default {
   },
 
   methods: {
+    filteredTickers() {
+      return this.tickers.filter((t) => t.name.includes(this.filter));
+    },
+
     subscribeToUpdate(tickerName) {
       setInterval(async () => {
         const f = await fetch(
@@ -226,8 +280,11 @@ export default {
       this.subscribeToUpdate(currentTicker.name);
 
       this.hasTicker = this.tickers.find((t) => t.name === this.ticker);
+			this.notInTickersList = !this.allTickers.includes(currentTicker.name);
 
-      if (!this.hasTicker) {
+      this.filter = "";
+
+      if (!this.hasTicker && !this.notInTickersList) {
         this.tickers.push(currentTicker);
 
         this.storeTickers();
