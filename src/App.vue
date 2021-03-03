@@ -117,7 +117,7 @@
             :key="t.name"
             @click="handleSelect(t)"
             :class="{
-              'border-4': sel === t,
+              'border-4': selectedTicker === t,
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           >
@@ -155,9 +155,9 @@
 
       <hr class="w-full border-t border-gray-600 my-4" />
 
-      <section v-if="sel && tickers.length" class="relative">
+      <section v-if="selectedTicker && tickers.length" class="relative">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          {{ sel.name }} - USD
+          {{ selectedTicker.name }} - USD
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
@@ -168,7 +168,7 @@
           ></div>
         </div>
         <button
-          @click="sel = null"
+          @click="selectedTicker = null"
           type="button"
           class="absolute top-0 right-0"
         >
@@ -210,7 +210,7 @@ export default {
       allTickers: [],
       filter: "",
       page: 1,
-      sel: null,
+      selectedTicker: null,
       graph: [],
       hasTicker: false,
       notInTickersList: false,
@@ -341,7 +341,7 @@ export default {
           clearInterval(updateInterval);
         }
 
-        if (tickerName === this.sel?.name) this.graph.push(data.USD);
+        if (tickerName === this.selectedTicker?.name) this.graph.push(data.USD);
       }, 3000);
     },
 
@@ -369,7 +369,8 @@ export default {
     },
 
     handleDelete(tickerToRemove) {
-      if (tickerToRemove === this.sel) this.sel = null;
+      if (tickerToRemove === this.selectedTicker) this.selectedTicker = null;
+
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
 
       this.storeTickers();
@@ -377,7 +378,7 @@ export default {
 
     handleSelect(tickerToSelect) {
       this.graph = [];
-      this.sel = tickerToSelect;
+      this.selectedTicker = tickerToSelect;
     },
 
     handleHint(hint) {
