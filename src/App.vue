@@ -297,6 +297,10 @@ export default {
       }
     },
 
+		tickers() {
+      localStorage.setItem("tickers", JSON.stringify(this.tickers));
+		},
+
     filter: function () {
       this.page = 1;
       window.history.pushState(
@@ -362,9 +366,7 @@ export default {
       this.filter = "";
 
       if (!this.hasTicker && !this.notInTickersList) {
-        this.tickers.push(currentTicker);
-
-        this.storeTickers();
+        this.tickers = [...this.tickers, currentTicker];
 
         this.ticker = "";
         this.hints = [];
@@ -375,8 +377,6 @@ export default {
       if (tickerToRemove === this.selectedTicker) this.selectedTicker = null;
 
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
-
-      this.storeTickers();
     },
 
     handleSelect(tickerToSelect) {
@@ -386,11 +386,6 @@ export default {
     handleHint(hint) {
       this.ticker = hint;
       this.add();
-    },
-
-    storeTickers() {
-      const store = JSON.stringify(this.tickers);
-      localStorage.setItem("tickers", store);
     },
   },
 };
