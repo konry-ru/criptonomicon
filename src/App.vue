@@ -306,6 +306,10 @@ export default {
       );
     },
 
+		selectedTicker() {
+      this.graph = [];
+		},
+
     page() {
       window.history.pushState(
         null,
@@ -330,7 +334,6 @@ export default {
         const data = await f.json();
 
         let currentTicker = this.tickers.find((t) => t.name === tickerName);
-        console.log(currentTicker);
 
         if (currentTicker && data.USD) {
           currentTicker.price =
@@ -377,7 +380,6 @@ export default {
     },
 
     handleSelect(tickerToSelect) {
-      this.graph = [];
       this.selectedTicker = tickerToSelect;
     },
 
