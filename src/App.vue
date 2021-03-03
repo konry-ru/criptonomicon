@@ -113,7 +113,7 @@
 
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t in filteredTickers()"
+            v-for="t in pageOfTickers"
             :key="t.name"
             @click="handleSelect(t)"
             :class="{
@@ -182,7 +182,7 @@
             x="0"
             y="0"
             viewBox="0 0 511.76 511.76"
-            style="enable-background: new 0 0 512 512;"
+            style="enable-background: new 0 0 512 512"
             xml:space="preserve"
           >
             <g>
@@ -214,39 +214,25 @@ export default {
       graph: [],
       hasTicker: false,
       notInTickersList: false,
-      hasNextPage: true,
     };
-  },
-
-  watch: {
-    ticker: function () {
-      if (this.ticker === "") {
-        this.notInTickersList = false;
-      }
-    },
-
-    filter: function () {
-      this.page = 1;
-      window.history.pushState(
-        null,
-        document.title,
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
-      );
-    },
-
-    page() {
-      window.history.pushState(
-        null,
-        document.title,
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
-      );
-    },
   },
 
   computed: {
     hints: function () {
       let hintsList = this.allTickers.filter((t) => t.startsWith(this.ticker));
       return this.ticker === "" ? [] : hintsList.sort().slice(0, 4);
+    },
+    filteredTickers() {
+      return this.tickers.filter((t) => t.name.includes(this.filter));
+    },
+    pageOfTickers() {
+      const start = (this.page - 1) * 6;
+      const end = this.page * 6;
+      return this.filteredTickers.slice(start, end);
+    },
+    hasNextPage() {
+      const end = this.page * 6;
+      return end >= this.filteredTickers.length ? false : true;
     },
   },
 
@@ -288,19 +274,32 @@ export default {
     });
   },
 
-  methods: {
-    filteredTickers() {
-      const start = (this.page - 1) * 6;
-      const end = this.page * 6;
-
-      const filteredList = this.tickers.filter((t) =>
-        t.name.includes(this.filter)
-      );
-      this.hasNextPage = end >= filteredList.length ? false : true;
-
-      return filteredList.slice(start, end);
+  watch: {
+    ticker: function () {
+      if (this.ticker === "") {
+        this.notInTickersList = false;
+      }
     },
 
+    filter: function () {
+      this.page = 1;
+      window.history.pushState(
+        null,
+        document.title,
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
+    },
+
+    page() {
+      window.history.pushState(
+        null,
+        document.title,
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
+    },
+  },
+
+  methods: {
     subscribeToUpdate(tickerName) {
       setInterval(async () => {
         const f = await fetch(
