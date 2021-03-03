@@ -242,7 +242,7 @@ export default {
       const minValue = Math.min(...this.graph);
       let normGraph;
       if (maxValue === minValue) {
-        normGraph = this.graph.map((price) => (price * 50) / price);
+        normGraph = this.graph.map(() => 50);
       } else {
         normGraph = this.graph.map(
           (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
@@ -313,22 +313,32 @@ export default {
         `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
       );
     },
+
+    pageOfTickers() {
+      if (this.pageOfTickers.length === 0 && this.page > 1) {
+        this.page -= 1;
+      }
+    },
   },
 
   methods: {
     subscribeToUpdate(tickerName) {
-      setInterval(async () => {
+      const updateInterval = setInterval(async () => {
         const f = await fetch(
           `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=3df379aa005a2527d7bc50a00816f82e274b21ac02306f8f8206a4dfc692087c`
         );
         const data = await f.json();
 
-        const currentTicker = this.tickers.find((t) => t.name === tickerName);
+        let currentTicker = this.tickers.find((t) => t.name === tickerName);
+        console.log(currentTicker);
+
         if (currentTicker && data.USD) {
           currentTicker.price =
             data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-        } else {
+        } else if (currentTicker) {
           currentTicker.price = "Not data";
+        } else {
+          clearInterval(updateInterval);
         }
 
         if (tickerName === this.sel?.name) this.graph.push(data.USD);
