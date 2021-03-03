@@ -237,6 +237,12 @@ export default {
     hasNextPage() {
       return this.endIndex >= this.filteredTickers.length ? false : true;
     },
+    pageStateOptions() {
+      return {
+        filter: this.filter,
+        page: this.page,
+      };
+    },
     normolizedGraph() {
       const maxValue = Math.max(...this.graph);
       const minValue = Math.min(...this.graph);
@@ -297,28 +303,23 @@ export default {
       }
     },
 
-		tickers() {
+    tickers() {
       localStorage.setItem("tickers", JSON.stringify(this.tickers));
-		},
+    },
+
+    selectedTicker() {
+      this.graph = [];
+    },
 
     filter: function () {
       this.page = 1;
-      window.history.pushState(
-        null,
-        document.title,
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
-      );
     },
 
-		selectedTicker() {
-      this.graph = [];
-		},
-
-    page() {
+    pageStateOptions(value) {
       window.history.pushState(
         null,
         document.title,
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+        `${window.location.pathname}?filter=${value.filter}&page=${value.page}`
       );
     },
 
