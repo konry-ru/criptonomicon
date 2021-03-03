@@ -161,7 +161,7 @@
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-            v-for="(bar, idx) in normolizeGraph()"
+            v-for="(bar, idx) in normolizedGraph"
             :key="idx"
             :style="{ height: `${bar}%` }"
             class="bg-purple-800 border w-10"
@@ -222,17 +222,33 @@ export default {
       let hintsList = this.allTickers.filter((t) => t.startsWith(this.ticker));
       return this.ticker === "" ? [] : hintsList.sort().slice(0, 4);
     },
+    startIndex() {
+      return (this.page - 1) * 6;
+    },
+    endIndex() {
+      return this.page * 6;
+    },
     filteredTickers() {
       return this.tickers.filter((t) => t.name.includes(this.filter));
     },
     pageOfTickers() {
-      const start = (this.page - 1) * 6;
-      const end = this.page * 6;
-      return this.filteredTickers.slice(start, end);
+      return this.filteredTickers.slice(this.startIndex, this.endIndex);
     },
     hasNextPage() {
-      const end = this.page * 6;
-      return end >= this.filteredTickers.length ? false : true;
+      return this.endIndex >= this.filteredTickers.length ? false : true;
+    },
+    normolizedGraph() {
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+      let normGraph;
+      if (maxValue === minValue) {
+        normGraph = this.graph.map((price) => (price * 50) / price);
+      } else {
+        normGraph = this.graph.map(
+          (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+        );
+      }
+      return normGraph;
     },
   },
 
@@ -362,20 +378,6 @@ export default {
     storeTickers() {
       const store = JSON.stringify(this.tickers);
       localStorage.setItem("tickers", store);
-    },
-
-    normolizeGraph() {
-      const maxValue = Math.max(...this.graph);
-      const minValue = Math.min(...this.graph);
-      let result;
-      if (maxValue === minValue) {
-        result = this.graph.map((price) => (price * 50) / price);
-      } else {
-        result = this.graph.map(
-          (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
-        );
-      }
-      return result;
     },
   },
 };
