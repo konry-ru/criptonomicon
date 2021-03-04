@@ -322,6 +322,9 @@ export default {
   methods: {
     getTickersUpdate() {
       setInterval(async () => {
+				if (!this.tickers.length) {
+					return;
+				}
         const tickersRequest = this.tickers.map((t) => t.name.toUpperCase());
         const exchangeData = await loadTickers(tickersRequest);
 
