@@ -7,7 +7,11 @@ fetch(
 	`https://min-api.cryptocompare.com/data/price?fsym=USD&tsyms=${tickersList.join(',')}&api_key=${API_KEY}`
 )
 .then(r => r.json())
-.then(rowData => Object.entries(rowData).map(([ticker, price]) => [ticker, 1 / price]));
+.then(rowData =>
+	Object.fromEntries(
+		Object.entries(rowData).map(([ticker, price]) => [ticker, 1 / price])
+	)
+);
 
 export const getTickersList = () =>
 fetch(

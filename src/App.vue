@@ -336,8 +336,7 @@ export default {
       const exchangeData = await loadTickers(tickersRequest);
 
       this.tickers.forEach((ticker) => {
-        const updatedTicker = exchangeData.find(([t]) => t[0] === ticker.name);
-        const newPrice = updatedTicker[1];
+        const newPrice = exchangeData[ticker.name.toUpperCase()];
 
         if (newPrice) {
           ticker.price = newPrice;
