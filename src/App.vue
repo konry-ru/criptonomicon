@@ -126,7 +126,7 @@
                 {{ t.name }} - USD
               </dt>
               <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                {{ formatPrice(t.price)  }}
+                {{ formatPrice(t.price) }}
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
@@ -320,10 +320,14 @@ export default {
   },
 
   methods: {
-		formatPrice(price) {
-			return price > 1 ? price.toFixed(2) : price.toPrecision(2);
-		},
-		
+    formatPrice(price) {
+      if (typeof price === "number") {
+        return price > 1 ? price.toFixed(2) : price.toPrecision(2);
+      } else {
+        return price;
+      }
+    },
+
     async updateTickers() {
       if (!this.tickers.length) {
         return;
@@ -332,14 +336,14 @@ export default {
       const exchangeData = await loadTickers(tickersRequest);
 
       this.tickers.forEach((ticker) => {
-        const price = exchangeData[ticker.name.toUpperCase()];
+        const updatedTicker = exchangeData.find(([t]) => t[0] === ticker.name);
+        const newPrice = updatedTicker[1];
 
-        if (price) {
-          const normolizedPrice = 1 / price;
-          ticker.price = normolizedPrice;
+        if (newPrice) {
+          ticker.price = newPrice;
         } else {
           ticker.price = "--";
-					return;
+          return;
         }
 
         if (ticker.name === this.selectedTicker?.name) {
