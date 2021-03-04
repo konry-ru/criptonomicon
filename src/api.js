@@ -7,3 +7,10 @@ fetch(
 	`https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=${API_KEY}`
 )
 .then(r => r.json());
+
+export const getTickersList = () =>
+fetch(
+	"https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+)
+.then(r => r.json())
+.catch(e => console.log(e));

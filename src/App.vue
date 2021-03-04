@@ -200,7 +200,7 @@
 </template>
 
 <script>
-import { loadTicker } from './api';
+import { loadTicker, getTickersList } from "./api";
 
 export default {
   name: "App",
@@ -271,21 +271,11 @@ export default {
     if (windowData.page) {
       this.page = windowData.page;
     }
-
-    async function getCoinsList(url) {
-      const res = await fetch(url);
-      return await res.json();
-    }
-    const coinsUrl =
-      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true";
-
-    getCoinsList(coinsUrl)
-      .then((res) => {
-        this.allTickers = Object.values(res.Data).map((item) => item.Symbol);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+		
+    getTickersList()
+		.then(response => {
+			this.allTickers = Object.values(response.Data).map(item => item.Symbol)
+		});
 
     const savedTickers = localStorage.getItem("tickers");
 
@@ -335,23 +325,23 @@ export default {
   methods: {
     subscribeToUpdate(tickerName) {
       const updateInterval = setInterval(async () => {
-
         const exchangeData = await loadTicker(tickerName);
 
         let currentTicker = this.tickers.find((t) => t.name === tickerName);
 
         if (currentTicker && exchangeData.USD) {
           currentTicker.price =
-            exchangeData.USD > 1 ? exchangeData.USD.toFixed(2) : exchangeData.USD.toPrecision(2);
-        }
-				else if (currentTicker) {
+            exchangeData.USD > 1
+              ? exchangeData.USD.toFixed(2)
+              : exchangeData.USD.toPrecision(2);
+        } else if (currentTicker) {
           currentTicker.price = "Not data";
-        }
-				else {
+        } else {
           clearInterval(updateInterval);
         }
 
-        if (tickerName === this.selectedTicker?.name) this.graph.push(exchangeData.USD);
+        if (tickerName === this.selectedTicker?.name)
+          this.graph.push(exchangeData.USD);
       }, 3000);
     },
 
