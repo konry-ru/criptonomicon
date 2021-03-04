@@ -336,14 +336,8 @@ export default {
       const exchangeData = await loadTickers(tickersRequest);
 
       this.tickers.forEach((ticker) => {
-        const newPrice = exchangeData[ticker.name.toUpperCase()];
-
-        if (newPrice) {
-          ticker.price = newPrice;
-        } else {
-          ticker.price = "--";
-          return;
-        }
+        const price = exchangeData[ticker.name.toUpperCase()];
+        ticker.price = price ? price : "--";
 
         if (ticker.name === this.selectedTicker?.name) {
           this.graph.push(ticker.price);
