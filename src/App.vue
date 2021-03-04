@@ -200,7 +200,7 @@
 </template>
 
 <script>
-import { loadTicker, getTickersList } from "./api";
+import { loadTickers, getTickersList } from "./api";
 
 export default {
   name: "App",
@@ -271,11 +271,10 @@ export default {
     if (windowData.page) {
       this.page = windowData.page;
     }
-		
-    getTickersList()
-		.then(response => {
-			this.allTickers = Object.values(response.Data).map(item => item.Symbol)
-		});
+
+    getTickersList().then((response) => {
+      this.allTickers = Object.values(response.Data).map((item) => item.Symbol);
+    });
 
     const savedTickers = localStorage.getItem("tickers");
 
@@ -283,9 +282,7 @@ export default {
       this.tickers = JSON.parse(savedTickers);
     }
 
-    this.tickers.forEach((tick) => {
-      this.subscribeToUpdate(tick.name);
-    });
+    this.getTickersUpdate();
   },
 
   watch: {
@@ -323,26 +320,23 @@ export default {
   },
 
   methods: {
-    subscribeToUpdate(tickerName) {
-      const updateInterval = setInterval(async () => {
-        const exchangeData = await loadTicker(tickerName);
+    getTickersUpdate() {
+      setInterval(async () => {
+        const tickersRequest = this.tickers.map((t) => t.name.toUpperCase());
+        const exchangeData = await loadTickers(tickersRequest);
 
-        let currentTicker = this.tickers.find((t) => t.name === tickerName);
-
-        if (currentTicker && exchangeData.USD) {
-          currentTicker.price =
-            exchangeData.USD > 1
-              ? exchangeData.USD.toFixed(2)
-              : exchangeData.USD.toPrecision(2);
-        } else if (currentTicker) {
-          currentTicker.price = "Not data";
-        } else {
-          clearInterval(updateInterval);
-        }
-
-        if (tickerName === this.selectedTicker?.name)
-          this.graph.push(exchangeData.USD);
-      }, 3000);
+        Object.entries(exchangeData).forEach((updatedData) => {
+          const tickerForUpdate = this.tickers.find(
+            (t) => t.name === updatedData[0]
+          );
+          const newPrice = 1 / updatedData[1];
+          tickerForUpdate.price =
+            newPrice > 1 ? newPrice.toFixed(2) : newPrice.toPrecision(2);
+          if (tickerForUpdate.name === this.selectedTicker?.name) {
+            this.graph.push(tickerForUpdate.price);
+          }
+        });
+      }, 5000);
     },
 
     add() {
@@ -350,8 +344,6 @@ export default {
         name: this.ticker,
         price: "--",
       };
-
-      this.subscribeToUpdate(currentTicker.name);
 
       this.hasTicker = this.tickers.find((t) => t.name === this.ticker);
       this.notInTickersList = !this.allTickers.includes(currentTicker.name);
