@@ -320,24 +320,28 @@ export default {
   },
 
   methods: {
-      async updateTickers() {
-				if (!this.tickers.length) {
-					return;
-				}
-        const tickersRequest = this.tickers.map((t) => t.name.toUpperCase());
-        const exchangeData = await loadTickers(tickersRequest);
+    async updateTickers() {
+      if (!this.tickers.length) {
+        return;
+      }
+      const tickersRequest = this.tickers.map((t) => t.name.toUpperCase());
+      const exchangeData = await loadTickers(tickersRequest);
 
-        Object.entries(exchangeData).forEach(([ticker, price]) => {
-          const tickerForUpdate = this.tickers.find(
-            (t) => t.name === ticker
-          );
+      this.tickers.forEach((ticker) => {
+        const price = exchangeData[ticker.name.toUpperCase()];
+
+        if (price) {
           const newPrice = 1 / price;
-          tickerForUpdate.price =
+          ticker.price =
             newPrice > 1 ? newPrice.toFixed(2) : newPrice.toPrecision(2);
-          if (tickerForUpdate.name === this.selectedTicker?.name) {
-            this.graph.push(tickerForUpdate.price);
-          }
-				});	
+        } else {
+          ticker.price = "--";
+        }
+
+        if (ticker.name === this.selectedTicker?.name) {
+          this.graph.push(ticker.price);
+        }
+      });
     },
 
     add() {
