@@ -126,7 +126,7 @@
                 {{ t.name }} - USD
               </dt>
               <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                {{ t.price }}
+                {{ formatPrice(t.price)  }}
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
@@ -320,6 +320,10 @@ export default {
   },
 
   methods: {
+		formatPrice(price) {
+			return price > 1 ? price.toFixed(2) : price.toPrecision(2);
+		},
+		
     async updateTickers() {
       if (!this.tickers.length) {
         return;
@@ -331,11 +335,11 @@ export default {
         const price = exchangeData[ticker.name.toUpperCase()];
 
         if (price) {
-          const newPrice = 1 / price;
-          ticker.price =
-            newPrice > 1 ? newPrice.toFixed(2) : newPrice.toPrecision(2);
+          const normolizedPrice = 1 / price;
+          ticker.price = normolizedPrice;
         } else {
           ticker.price = "--";
+					return;
         }
 
         if (ticker.name === this.selectedTicker?.name) {
