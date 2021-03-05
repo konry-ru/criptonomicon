@@ -10,7 +10,6 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
-                v-on:keydown="hasTicker = false"
                 v-on:keydown.enter="add"
                 type="text"
                 autocomplete="off"
@@ -113,7 +112,7 @@
 
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t in filteredTickers()"
+            v-for="t in filteredTickers"
             :key="t.name"
             @click="handleSelect(t)"
             :class="{
@@ -221,7 +220,6 @@ export default {
       graph: [],
       hasTicker: false,
       notInTickersList: false,
-      hasNextPage: true,
     };
   },
 
@@ -266,6 +264,27 @@ export default {
       );
       return this.ticker === "" ? [] : hintsList.sort().slice(0, 4);
     },
+
+		startOfPage() {
+			return (this.page -1) * 6;
+		},
+
+		endOfPage() {
+			return this.page * 6;
+		},
+
+		filteredList() {
+			return this.tickers.filter((t) =>
+        t.name.includes(this.filter))
+		},
+
+		hasNextPage() {
+			return this.endOfPage < this.filteredList.length;
+		},
+		
+    filteredTickers() {
+      return this.filteredList.slice(this.startOfPage, this.endOfPage);
+    },
   },
 
   created: function () {
@@ -302,18 +321,6 @@ export default {
 				return price;
 			}
       return price > 1 ? price.toFixed(2) : price.toPrecision(2);
-    },
-
-    filteredTickers() {
-      const start = (this.page - 1) * 6;
-      const end = this.page * 6;
-
-      const filteredList = this.tickers.filter((t) =>
-        t.name.includes(this.filter)
-      );
-      this.hasNextPage = end >= filteredList.length ? false : true;
-
-      return filteredList.slice(start, end);
     },
 
     add() {
