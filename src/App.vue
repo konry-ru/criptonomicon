@@ -126,7 +126,7 @@
                 {{ t.name }} - USD
               </dt>
               <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                {{ t.price }}
+                {{ formatedTickerOutput(t.price) }}
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
@@ -182,7 +182,7 @@
             x="0"
             y="0"
             viewBox="0 0 511.76 511.76"
-            style="enable-background: new 0 0 512 512;"
+            style="enable-background: new 0 0 512 512"
             xml:space="preserve"
           >
             <g>
@@ -200,6 +200,13 @@
 </template>
 
 <script>
+import {
+  getTickersList,
+  startRequests,
+  subscribeToTicker,
+  unsubscribeFromTicker,
+} from "./api";
+
 export default {
   name: "App",
 
@@ -207,7 +214,7 @@ export default {
     return {
       ticker: "",
       tickers: [],
-      allTickers: [],
+      listAllTickers: [],
       filter: "",
       page: 1,
       sel: null,
@@ -225,6 +232,12 @@ export default {
       }
     },
 
+		tickers() {
+			// if(this.tickers.length > 0) {
+				startRequests(this.tickers.map(t => t.name));
+			// }
+		},
+
     filter: function () {
       this.page = 1;
       window.history.pushState(
@@ -241,20 +254,28 @@ export default {
         `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
       );
     },
+    sel() {
+			
+		},
   },
 
   computed: {
     hints: function () {
-      let hintsList = this.allTickers.filter((t) => t.startsWith(this.ticker));
+      let hintsList = this.listAllTickers.filter((t) =>
+        t.startsWith(this.ticker)
+      );
       return this.ticker === "" ? [] : hintsList.sort().slice(0, 4);
     },
   },
 
   created: function () {
+    getTickersList().then((res) => {
+      this.listAllTickers = Object.values(res.Data).map((item) => item.Symbol);
+    });
+
     const windowData = Object.fromEntries(
       new URL(location).searchParams.entries()
     );
-
     if (windowData.filter) {
       this.filter = windowData.filter;
     }
@@ -262,33 +283,27 @@ export default {
       this.page = windowData.page;
     }
 
-    async function getCoinsList(url) {
-      const res = await fetch(url);
-      return await res.json();
-    }
-    const coinsUrl =
-      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true";
-
-    getCoinsList(coinsUrl)
-      .then((res) => {
-        this.allTickers = Object.values(res.Data).map((item) => item.Symbol);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-
     const savedTickers = localStorage.getItem("tickers");
-
     if (savedTickers) {
       this.tickers = JSON.parse(savedTickers);
     }
 
     this.tickers.forEach((tick) => {
-      this.subscribeToUpdate(tick.name);
+      subscribeToTicker(tick.name, (price) => {
+        tick.price = price;
+      });
+			
     });
   },
 
   methods: {
+    formatedTickerOutput(price) {
+			if(price === '--') {
+				return price;
+			}
+      return price > 1 ? price.toFixed(2) : price.toPrecision(2);
+    },
+
     filteredTickers() {
       const start = (this.page - 1) * 6;
       const end = this.page * 6;
@@ -301,51 +316,36 @@ export default {
       return filteredList.slice(start, end);
     },
 
-    subscribeToUpdate(tickerName) {
-      setInterval(async () => {
-        const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&api_key=3df379aa005a2527d7bc50a00816f82e274b21ac02306f8f8206a4dfc692087c`
-        );
-        const data = await f.json();
-
-        const currentTicker = this.tickers.find((t) => t.name === tickerName);
-        if (currentTicker && data.USD) {
-          currentTicker.price =
-            data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-        } else {
-          currentTicker.price = "Not data";
-        }
-
-        if (tickerName === this.sel?.name) this.graph.push(data.USD);
-      }, 3000);
-    },
-
     add() {
       const currentTicker = {
         name: this.ticker,
         price: "--",
       };
 
-      this.subscribeToUpdate(currentTicker.name);
+      subscribeToTicker(currentTicker.name, (price) => {
+        this.tickers.find((t) => t.name === currentTicker.name).price = price;
+      });
 
       this.hasTicker = this.tickers.find((t) => t.name === this.ticker);
-      this.notInTickersList = !this.allTickers.includes(currentTicker.name);
+      this.notInTickersList = !this.listAllTickers.includes(currentTicker.name);
 
       this.filter = "";
 
       if (!this.hasTicker && !this.notInTickersList) {
         this.tickers.push(currentTicker);
 
+			startRequests(this.tickers.map(t => t.name));
+
         this.storeTickers();
 
         this.ticker = "";
-        this.hints = [];
       }
     },
 
     handleDelete(tickerToRemove) {
       if (tickerToRemove === this.sel) this.sel = null;
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
+      unsubscribeFromTicker(tickerToRemove.name);
 
       this.storeTickers();
     },
@@ -353,6 +353,9 @@ export default {
     handleSelect(tickerToSelect) {
       this.graph = [];
       this.sel = tickerToSelect;
+			subscribeToTicker(tickerToSelect.name, (price) => {
+				this.graph.push(price);
+			})
     },
 
     handleHint(hint) {
