@@ -41,11 +41,8 @@ export const getTickersList = () =>
 
 // TODO Can't delete concrete subscriber for ex. by change graph
 export function subscribeToTicker(ticker, cb) {
-	if (tickersSubscribers.has(ticker)) {
-		tickersSubscribers.set(ticker, [...tickersSubscribers.get(ticker), cb]);
-	} else {
-		tickersSubscribers.set(ticker, [cb]);
-	}
+	const subscribers = tickersSubscribers.get(ticker) || [];
+	tickersSubscribers.set(ticker, [...subscribers, cb]);
 }
 
 export function unsubscribeFromTicker(ticker) {
