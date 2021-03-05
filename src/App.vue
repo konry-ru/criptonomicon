@@ -160,7 +160,7 @@
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-            v-for="(bar, idx) in normolizeGraph()"
+            v-for="(bar, idx) in normolizedGraph"
             :key="idx"
             :style="{ height: `${bar}%` }"
             class="bg-purple-800 border w-10"
@@ -218,7 +218,6 @@ export default {
       page: 1,
       sel: null,
       graph: [],
-      hasTicker: false,
       notInTickersList: false,
     };
   },
@@ -230,11 +229,11 @@ export default {
       }
     },
 
-		tickers() {
-			// if(this.tickers.length > 0) {
-				startRequests(this.tickers.map(t => t.name));
-			// }
-		},
+    tickers() {
+      // if(this.tickers.length > 0) {
+      startRequests(this.tickers.map((t) => t.name));
+      // }
+    },
 
     filter: function () {
       this.page = 1;
@@ -252,12 +251,14 @@ export default {
         `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
       );
     },
-    sel() {
-			
-		},
+    sel() {},
   },
 
   computed: {
+    hasTicker() {
+      return this.tickers.find((t) => t.name === this.ticker);
+    },
+
     hints: function () {
       let hintsList = this.listAllTickers.filter((t) =>
         t.startsWith(this.ticker)
@@ -265,25 +266,38 @@ export default {
       return this.ticker === "" ? [] : hintsList.sort().slice(0, 4);
     },
 
-		startOfPage() {
-			return (this.page -1) * 6;
-		},
+    startOfPage() {
+      return (this.page - 1) * 6;
+    },
 
-		endOfPage() {
-			return this.page * 6;
-		},
+    endOfPage() {
+      return this.page * 6;
+    },
 
-		filteredList() {
-			return this.tickers.filter((t) =>
-        t.name.includes(this.filter))
-		},
+    filteredList() {
+      return this.tickers.filter((t) => t.name.includes(this.filter));
+    },
 
-		hasNextPage() {
-			return this.endOfPage < this.filteredList.length;
-		},
-		
+    hasNextPage() {
+      return this.endOfPage < this.filteredList.length;
+    },
+
     filteredTickers() {
       return this.filteredList.slice(this.startOfPage, this.endOfPage);
+    },
+
+    normolizedGraph() {
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+      let result;
+      if (maxValue === minValue) {
+        result = this.graph.map((price) => (price * 50) / price);
+      } else {
+        result = this.graph.map(
+          (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+        );
+      }
+      return result;
     },
   },
 
@@ -311,15 +325,14 @@ export default {
       subscribeToTicker(tick.name, (price) => {
         tick.price = price;
       });
-			
     });
   },
 
   methods: {
     formatedTickerOutput(price) {
-			if(price === '--') {
-				return price;
-			}
+      if (price === "--") {
+        return price;
+      }
       return price > 1 ? price.toFixed(2) : price.toPrecision(2);
     },
 
@@ -329,11 +342,6 @@ export default {
         price: "--",
       };
 
-      subscribeToTicker(currentTicker.name, (price) => {
-        this.tickers.find((t) => t.name === currentTicker.name).price = price;
-      });
-
-      this.hasTicker = this.tickers.find((t) => t.name === this.ticker);
       this.notInTickersList = !this.listAllTickers.includes(currentTicker.name);
 
       this.filter = "";
@@ -341,7 +349,11 @@ export default {
       if (!this.hasTicker && !this.notInTickersList) {
         this.tickers.push(currentTicker);
 
-			startRequests(this.tickers.map(t => t.name));
+        subscribeToTicker(currentTicker.name, (price) => {
+          this.tickers.find((t) => t.name === currentTicker.name).price = price;
+        });
+
+        startRequests(this.tickers.map((t) => t.name));
 
         this.storeTickers();
 
@@ -360,9 +372,9 @@ export default {
     handleSelect(tickerToSelect) {
       this.graph = [];
       this.sel = tickerToSelect;
-			subscribeToTicker(tickerToSelect.name, (price) => {
-				this.graph.push(price);
-			})
+      subscribeToTicker(tickerToSelect.name, (price) => {
+        this.graph.push(price);
+      });
     },
 
     handleHint(hint) {
@@ -373,20 +385,6 @@ export default {
     storeTickers() {
       const store = JSON.stringify(this.tickers);
       localStorage.setItem("tickers", store);
-    },
-
-    normolizeGraph() {
-      const maxValue = Math.max(...this.graph);
-      const minValue = Math.min(...this.graph);
-      let result;
-      if (maxValue === minValue) {
-        result = this.graph.map((price) => (price * 50) / price);
-      } else {
-        result = this.graph.map(
-          (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
-        );
-      }
-      return result;
     },
   },
 };
