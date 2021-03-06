@@ -22,7 +22,7 @@ const updateTickers = () => {
 				.map(([ticker, data]) => [ticker, data.USD]);
 			console.log(newTickers);
 			return newTickers.forEach(([key, value]) =>
-				tickersHandlers.get(key).forEach(fn => fn(value)));
+				tickersHandlers.get(key).forEach(fn => fn(key, value)));
 		}
 		)
 		.catch(e => console.log("Ошибка обработки данных", e));

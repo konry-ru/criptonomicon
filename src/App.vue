@@ -315,13 +315,19 @@ export default {
     }
 
     this.tickers.forEach((ticker) => {
-      subscribeToTicker(ticker.name, (price) => {
-        ticker.price = price;
-      });
+      subscribeToTicker(ticker.name, (tickerName, newPrice) =>
+        this.updateTicker(tickerName, newPrice)
+      );
     });
   },
 
   methods: {
+    updateTicker(tickerName, price) {
+      this.tickers
+        .filter((t) => t.name === tickerName)
+        .forEach((t) => (t.price = price));
+    },
+
     formatedTickerOutput(price) {
       if (price === "--") {
         return price;
@@ -342,9 +348,9 @@ export default {
       if (!this.hasTicker && !this.notInTickersList) {
         this.tickers.push(currentTicker);
 
-        subscribeToTicker(currentTicker.name, (price) => {
-          this.tickers.find((t) => t.name === currentTicker.name).price = price;
-        });
+        subscribeToTicker(currentTicker.name, (tickerName, newPrice) =>
+          this.updateTicker(tickerName, newPrice)
+        );
 
         this.storeTickers();
 
