@@ -44,13 +44,13 @@ export function subscribeToTicker(ticker, cb) {
 	tickersSubscribers.set(ticker, [...subscribers, cb]);
 }
 
-// TODO Can't delete concrete subscriber for ex. by change graph
-export function unsubscribeFromTicker(ticker, cb) {
+// TODO catch error if subscribers haven't cb
+export function unsubscribeFromTicker(ticker, cbName) {
 	const subscribers = tickersSubscribers.get(ticker) || [];
-	if (cb) {
+	if (cbName) {
 		tickersSubscribers.set(
 			ticker,
-			subscribers.filter(fn => fn !== cb)
+			subscribers.filter(fn => fn.name !== cbName)
 		);
 	} else {
 		tickersSubscribers.delete(ticker);

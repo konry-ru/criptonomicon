@@ -370,11 +370,15 @@ export default {
     },
 
     handleSelect(tickerToSelect) {
+			if (this.sel) {
+				unsubscribeFromTicker(this.sel.name, 'cbFromSelectedTicker');
+			}
       this.graph = [];
       this.sel = tickerToSelect;
-      subscribeToTicker(tickerToSelect.name, (price) => {
+			const cbFromSelectedTicker = (price) => {
         this.graph.push(price);
-      });
+			};
+      subscribeToTicker(tickerToSelect.name, cbFromSelectedTicker);
     },
 
     handleHint(hint) {
