@@ -1,32 +1,19 @@
-const API_KEY = '3df379aa005a2527d7bc50a00816f82e274b21ac02306f8f8206a4dfc692087c';
+const API_KEY = 'd8ed30cc8bba73494b4a9993a9ab47fc88562bee4c5ff7727538e1d02cbcda4f';
 
 const tickersHandlers = new Map();
+const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`);
+const AGGREGATE_INDEX = "5";
 
-//  TODO: refactor to use URLSearchParams Put directly in request string is bad for security
-const updateTickers = () => {
-	if (tickersHandlers.size === 0) {
+
+socket.addEventListener("message", e => {
+	const {TYPE: type, FROMSYMBOL: currency, PRICE: newPrice} = JSON.parse(e.data);
+
+	if(type !== AGGREGATE_INDEX) {
 		return;
 	}
-	console.log(tickersHandlers);
-	fetch(
-		`https://min-api.cryptocompare.com/data/pricemulti?fsyms=
-		${[...tickersHandlers.keys()]
-			.join(',')
-		}
-			&tsyms=USD&api_key=${API_KEY}`
-	)
-		.then(r => r.json())
-		.catch(e => console.log("Ошибка из запроса к серверу", e))
-		.then(rowData => {
-			const newTickers = Object.entries(rowData)
-				.map(([ticker, data]) => [ticker, data.USD]);
-			console.log(newTickers);
-			return newTickers.forEach(([key, value]) =>
-				tickersHandlers.get(key).forEach(fn => fn(key, value)));
-		}
-		)
-		.catch(e => console.log("Ошибка обработки данных", e));
-}
+	const handlers = tickersHandlers.get(currency) ?? [];
+	handlers.forEach(fn => fn(currency, newPrice));
+});
 
 export const getTickersList = () =>
 	fetch(
@@ -35,9 +22,36 @@ export const getTickersList = () =>
 		.then(r => r.json())
 		.catch(e => console.log(e));
 
+function sendToWebSocket(message) {
+	const stringifiedMessage = JSON.stringify(message);
+	if (socket.readyState === WebSocket.OPEN) {
+		socket.send(stringifiedMessage);
+		return;
+	}
+	socket.addEventListener("open", () => {
+		socket.send(stringifiedMessage);
+	}, {once: true});
+}		
+
+
+function subscribeToTickerOnWs(ticker) {
+	sendToWebSocket({
+		action: "SubAdd",
+		subs: [`5~CCCAGG~${ticker}~USD`]
+	});
+}
+
+function unSubscribeFromTickerOnWs(ticker) {
+	sendToWebSocket({
+		action: "SubRemove",
+		subs: [`5~CCCAGG~${ticker}~USD`]
+	});
+}
+
 export function subscribeToTicker(ticker, cb) {
 	const subscribers = tickersHandlers.get(ticker) || [];
 	tickersHandlers.set(ticker, [...subscribers, cb]);
+	subscribeToTickerOnWs(ticker);
 }
 
 // TODO catch error if subscribers haven't cb
@@ -51,11 +65,5 @@ export function unsubscribeFromTicker(ticker, cbName) {
 	} else {
 		tickersHandlers.delete(ticker);
 	}
-
-
+	unSubscribeFromTickerOnWs(ticker);
 }
-
-setInterval(() => {
-	updateTickers()
-}
-	, 5000);
