@@ -10,24 +10,26 @@ export const startRequests = tickersList => {
 	}
 	const requestInterval = setInterval(() => {
 		console.log(tickersSubscribers);
-		fetch(
-			`https://min-api.cryptocompare.com/data/pricemulti?fsyms=${tickersList.join(',')}&tsyms=USD&api_key=${API_KEY}`
-		)
-			.then(r => r.json())
-			.catch(e => console.log("Ошибка из запроса к серверу", e))
-			.then(rowData =>
-				Object.fromEntries(
-					Object.entries(rowData).map(([ticker, data]) => [ticker, data.USD])
-				)
+		if(tickersSubscribers.size > 0) {
+			fetch(
+				`https://min-api.cryptocompare.com/data/pricemulti?fsyms=${tickersList.join(',')}&tsyms=USD&api_key=${API_KEY}`
 			)
-			.then(res => {
-				Object.entries(res).forEach(([key, value]) => {
-					console.log({ key, value })
-
-					tickersSubscribers.get(key).forEach(fn => fn(value))
-				});
-			})
-			.catch(e => console.log("Ошибка обработки данных", e));
+				.then(r => r.json())
+				.catch(e => console.log("Ошибка из запроса к серверу", e))
+				.then(rowData =>
+					Object.fromEntries(
+						Object.entries(rowData).map(([ticker, data]) => [ticker, data.USD])
+					)
+				)
+				.then(res => {
+					Object.entries(res).forEach(([key, value]) => {
+						console.log({ key, value })
+	
+						tickersSubscribers.get(key).forEach(fn => fn(value))
+					});
+				})
+				.catch(e => console.log("Ошибка обработки данных", e));
+		}
 	}, 5000);
 	requestIntervals.push(requestInterval);
 }
