@@ -1,37 +1,31 @@
 const API_KEY = '3df379aa005a2527d7bc50a00816f82e274b21ac02306f8f8206a4dfc692087c';
 
-const tickersSubscribers = new Map();
-const requestIntervals = [];
+const tickersHandlers = new Map();
 
 //  TODO: refactor to use URLSearchParams Put directly in request string is bad for security
-export const startRequests = tickersList => {
-	if (requestIntervals.length > 0) {
-		requestIntervals.forEach(interval => clearInterval(interval));
+const updateTickers = () => {
+	if (tickersHandlers.size === 0) {
+		return;
 	}
-	const requestInterval = setInterval(() => {
-		console.log(tickersSubscribers);
-		if(tickersSubscribers.size > 0) {
-			fetch(
-				`https://min-api.cryptocompare.com/data/pricemulti?fsyms=${tickersList.join(',')}&tsyms=USD&api_key=${API_KEY}`
-			)
-				.then(r => r.json())
-				.catch(e => console.log("Ошибка из запроса к серверу", e))
-				.then(rowData =>
-					Object.fromEntries(
-						Object.entries(rowData).map(([ticker, data]) => [ticker, data.USD])
-					)
-				)
-				.then(res => {
-					Object.entries(res).forEach(([key, value]) => {
-						console.log({ key, value })
-	
-						tickersSubscribers.get(key).forEach(fn => fn(value))
-					});
-				})
-				.catch(e => console.log("Ошибка обработки данных", e));
+	console.log(tickersHandlers);
+	fetch(
+		`https://min-api.cryptocompare.com/data/pricemulti?fsyms=
+		${[...tickersHandlers.keys()]
+			.join(',')
 		}
-	}, 5000);
-	requestIntervals.push(requestInterval);
+			&tsyms=USD&api_key=${API_KEY}`
+	)
+		.then(r => r.json())
+		.catch(e => console.log("Ошибка из запроса к серверу", e))
+		.then(rowData => {
+			const newTickers = Object.entries(rowData)
+				.map(([ticker, data]) => [ticker, data.USD]);
+			console.log(newTickers);
+			return newTickers.forEach(([key, value]) =>
+				tickersHandlers.get(key).forEach(fn => fn(value)));
+		}
+		)
+		.catch(e => console.log("Ошибка обработки данных", e));
 }
 
 export const getTickersList = () =>
@@ -42,30 +36,26 @@ export const getTickersList = () =>
 		.catch(e => console.log(e));
 
 export function subscribeToTicker(ticker, cb) {
-	const subscribers = tickersSubscribers.get(ticker) || [];
-	tickersSubscribers.set(ticker, [...subscribers, cb]);
+	const subscribers = tickersHandlers.get(ticker) || [];
+	tickersHandlers.set(ticker, [...subscribers, cb]);
 }
 
 // TODO catch error if subscribers haven't cb
 export function unsubscribeFromTicker(ticker, cbName) {
-	const subscribers = tickersSubscribers.get(ticker) || [];
+	const subscribers = tickersHandlers.get(ticker) || [];
 	if (cbName) {
-		tickersSubscribers.set(
+		tickersHandlers.set(
 			ticker,
 			subscribers.filter(fn => fn.name !== cbName)
 		);
 	} else {
-		tickersSubscribers.delete(ticker);
+		tickersHandlers.delete(ticker);
 	}
 
 
 }
 
-// subscribeToTicker('BTC', () => console.log('Subscribed to BTC!'));
-// subscribeToTicker('BTC', () => console.log('Second subscriber to BTC!'));
-// subscribeToTicker('ETH', () => console.log('First subscriber to ETH'));
-// console.log(tickersSubscribers);
-// tickersSubscribers.get('BTC').forEach(fn => fn());
-// unsubscribeFromTicker('BTC');
-// console.log(tickersSubscribers);
-// unsubscribeFromTicker('BTC');
+setInterval(() => {
+	updateTickers()
+}
+	, 5000);

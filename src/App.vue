@@ -201,7 +201,6 @@
 <script>
 import {
   getTickersList,
-  startRequests,
   subscribeToTicker,
   unsubscribeFromTicker,
 } from "./api";
@@ -227,12 +226,6 @@ export default {
       if (this.ticker === "") {
         this.notInTickersList = false;
       }
-    },
-
-    tickers() {
-      // if(this.tickers.length > 0) {
-      startRequests(this.tickers.map((t) => t.name));
-      // }
     },
 
     filter: function () {
@@ -321,9 +314,9 @@ export default {
       this.tickers = JSON.parse(savedTickers);
     }
 
-    this.tickers.forEach((tick) => {
-      subscribeToTicker(tick.name, (price) => {
-        tick.price = price;
+    this.tickers.forEach((ticker) => {
+      subscribeToTicker(ticker.name, (price) => {
+        ticker.price = price;
       });
     });
   },
@@ -353,8 +346,6 @@ export default {
           this.tickers.find((t) => t.name === currentTicker.name).price = price;
         });
 
-        startRequests(this.tickers.map((t) => t.name));
-
         this.storeTickers();
 
         this.ticker = "";
@@ -370,14 +361,14 @@ export default {
     },
 
     handleSelect(tickerToSelect) {
-			if (this.sel) {
-				unsubscribeFromTicker(this.sel.name, 'cbFromSelectedTicker');
-			}
+      if (this.sel) {
+        unsubscribeFromTicker(this.sel.name, "cbFromSelectedTicker");
+      }
       this.graph = [];
       this.sel = tickerToSelect;
-			const cbFromSelectedTicker = (price) => {
+      const cbFromSelectedTicker = (price) => {
         this.graph.push(price);
-			};
+      };
       subscribeToTicker(tickerToSelect.name, cbFromSelectedTicker);
     },
 
