@@ -5,7 +5,7 @@ const requestIntervals = [];
 
 //  TODO: refactor to use URLSearchParams Put directly in request string is bad for security
 export const startRequests = tickersList => {
-	if(requestIntervals.length > 0) {
+	if (requestIntervals.length > 0) {
 		requestIntervals.forEach(interval => clearInterval(interval));
 	}
 	const requestInterval = setInterval(() => {
@@ -22,7 +22,7 @@ export const startRequests = tickersList => {
 			)
 			.then(res => {
 				Object.entries(res).forEach(([key, value]) => {
-					console.log({key, value})
+					console.log({ key, value })
 
 					tickersSubscribers.get(key).forEach(fn => fn(value))
 				});
@@ -39,14 +39,24 @@ export const getTickersList = () =>
 		.then(r => r.json())
 		.catch(e => console.log(e));
 
-// TODO Can't delete concrete subscriber for ex. by change graph
 export function subscribeToTicker(ticker, cb) {
 	const subscribers = tickersSubscribers.get(ticker) || [];
 	tickersSubscribers.set(ticker, [...subscribers, cb]);
 }
 
-export function unsubscribeFromTicker(ticker) {
-	tickersSubscribers.delete(ticker);
+// TODO Can't delete concrete subscriber for ex. by change graph
+export function unsubscribeFromTicker(ticker, cb) {
+	const subscribers = tickersSubscribers.get(ticker) || [];
+	if (cb) {
+		tickersSubscribers.set(
+			ticker,
+			subscribers.filter(fn => fn !== cb)
+		);
+	} else {
+		tickersSubscribers.delete(ticker);
+	}
+
+
 }
 
 // subscribeToTicker('BTC', () => console.log('Subscribed to BTC!'));
