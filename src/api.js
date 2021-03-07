@@ -4,11 +4,18 @@ const tickersHandlers = new Map();
 const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`);
 const AGGREGATE_INDEX = "5";
 
+// TODO [ ] (5 <заказчик>) Добавить возможность открытия приложения в новых вкладках
+// TODO [ ] --- через localStorage (вынести работу с localstorage in api.js)
+// TODO [ ] --- через BroadCastChannel
+
 
 socket.addEventListener("message", e => {
-	const {TYPE: type, FROMSYMBOL: currency, PRICE: newPrice} = JSON.parse(e.data);
+	const { TYPE: type, FROMSYMBOL: currency, PRICE: newPrice } = JSON.parse(e.data);
 
-	if(type !== AGGREGATE_INDEX) {
+	if (type !== AGGREGATE_INDEX) {
+		return;
+	}
+	if (!newPrice) {
 		return;
 	}
 	const handlers = tickersHandlers.get(currency) ?? [];
@@ -22,6 +29,7 @@ export const getTickersList = () =>
 		.then(r => r.json())
 		.catch(e => console.log(e));
 
+
 function sendToWebSocket(message) {
 	const stringifiedMessage = JSON.stringify(message);
 	if (socket.readyState === WebSocket.OPEN) {
@@ -30,9 +38,8 @@ function sendToWebSocket(message) {
 	}
 	socket.addEventListener("open", () => {
 		socket.send(stringifiedMessage);
-	}, {once: true});
-}		
-
+	}, { once: true });
+}
 
 function subscribeToTickerOnWs(ticker) {
 	sendToWebSocket({
@@ -46,6 +53,16 @@ function unSubscribeFromTickerOnWs(ticker) {
 		action: "SubRemove",
 		subs: [`5~CCCAGG~${ticker}~USD`]
 	});
+}
+
+export function getTickersFromLocalStorage() {
+	const savedTickers = localStorage.getItem("tickers");
+	return JSON.parse(savedTickers);
+}
+
+export function rewriteLocalStorage() {
+	const store = JSON.stringify(this.tickers);
+	localStorage.setItem("tickers", store);
 }
 
 export function subscribeToTicker(ticker, cb) {

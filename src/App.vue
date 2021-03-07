@@ -200,6 +200,7 @@
 
 <script>
 import {
+  getTickersFromLocalStorage,
   getTickersList,
   subscribeToTicker,
   unsubscribeFromTicker,
@@ -309,10 +310,7 @@ export default {
       this.page = windowData.page;
     }
 
-    const savedTickers = localStorage.getItem("tickers");
-    if (savedTickers) {
-      this.tickers = JSON.parse(savedTickers);
-    }
+    this.tickers = getTickersFromLocalStorage();
 
     this.tickers.forEach((ticker) => {
       subscribeToTicker(ticker.name, (tickerName, newPrice) =>
