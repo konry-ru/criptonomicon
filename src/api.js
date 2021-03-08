@@ -3,6 +3,7 @@ const API_KEY = 'd8ed30cc8bba73494b4a9993a9ab47fc88562bee4c5ff7727538e1d02cbcda4
 const tickersHandlers = new Map();
 const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`);
 const AGGREGATE_INDEX = "5";
+const TOO_MANY_SOCETS_PER_CLIENT = "429";
 
 // TODO [ ] (5 <заказчик>) Добавить возможность открытия приложения в новых вкладках
 // TODO [ ] --- через localStorage (вынести работу с localstorage in api.js)
@@ -11,6 +12,11 @@ const AGGREGATE_INDEX = "5";
 
 socket.addEventListener("message", e => {
 	const { TYPE: type, FROMSYMBOL: currency, PRICE: newPrice } = JSON.parse(e.data);
+
+	if (type === TOO_MANY_SOCETS_PER_CLIENT) {
+		switchToLocalStorage();
+		return;
+	}
 
 	if (type !== AGGREGATE_INDEX) {
 		return;
@@ -21,6 +27,21 @@ socket.addEventListener("message", e => {
 	const handlers = tickersHandlers.get(currency) ?? [];
 	handlers.forEach(fn => fn(currency, newPrice));
 });
+
+socket.addEventListener('error', function (event) {
+	console.log('WebSocket error: ', event);
+});
+
+const switchToLocalStorage = () => {
+	console.log('New page of app')
+	window.addEventListener('storage', (evt) => {
+		const tickersStorage = JSON.parse(evt.newValue);
+		tickersStorage.forEach((ticker) => {
+			const handlers = tickersHandlers.get(ticker.name) ?? [];
+			handlers.forEach(fn => fn(ticker.name, ticker.price));
+		});
+	});
+}
 
 export const getTickersList = () =>
 	fetch(
@@ -60,8 +81,8 @@ export function getTickersFromLocalStorage() {
 	return JSON.parse(savedTickers);
 }
 
-export function rewriteLocalStorage() {
-	const store = JSON.stringify(this.tickers);
+export function updateLocalStorage(tickers) {
+	const store = JSON.stringify(tickers);
 	localStorage.setItem("tickers", store);
 }
 
