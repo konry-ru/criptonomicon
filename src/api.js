@@ -26,21 +26,27 @@ socket.addEventListener("message", e => {
 	}
 	const handlers = tickersHandlers.get(currency) ?? [];
 	handlers.forEach(fn => fn(currency, newPrice));
-	updateLocalStorage(currency, newPrice);
+	updateLocalStorageByWs(currency, newPrice);
 });
 
 socket.addEventListener('error', function (event) {
 	console.log('WebSocket error: ', event);
 });
 
-function updateLocalStorage(ticker, price) {
+function updateLocalStorageByWs(ticker, price) {
 	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
 	let tickerForUpdate = savedTickers.find(t => t.name === ticker);
-	if (!tickerForUpdate) {
-		tickerForUpdate = {name: ticker, price}
-		savedTickers.push(tickerForUpdate);
+	if(tickerForUpdate) {
+		tickerForUpdate.price = price;
 	}
-	tickerForUpdate.price = price;
+	localStorage.setItem("tickers", JSON.stringify(savedTickers));
+}
+
+function updateLocalStorage(ticker) {
+	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
+	if(!savedTickers.find(t => t.name ===ticker)) {
+		savedTickers.push({name: ticker, price: "--"});
+	}
 	localStorage.setItem("tickers", JSON.stringify(savedTickers));
 }
 

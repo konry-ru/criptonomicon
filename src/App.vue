@@ -310,8 +310,10 @@ export default {
       this.page = windowData.page;
     }
 
-    this.tickers = getTickersFromLocalStorage();
-
+		setInterval(() => {
+			this.tickers = getTickersFromLocalStorage();
+		}, 3000);
+    
     this.tickers.forEach((ticker) => {
       subscribeToTicker(ticker.name, (tickerName, newPrice) =>
         this.updateTicker(tickerName, newPrice)
