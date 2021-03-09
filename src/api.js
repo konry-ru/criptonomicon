@@ -26,11 +26,29 @@ socket.addEventListener("message", e => {
 	}
 	const handlers = tickersHandlers.get(currency) ?? [];
 	handlers.forEach(fn => fn(currency, newPrice));
+	updateLocalStorage(currency, newPrice);
 });
 
 socket.addEventListener('error', function (event) {
 	console.log('WebSocket error: ', event);
 });
+
+function updateLocalStorage(ticker, price) {
+	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
+	let tickerForUpdate = savedTickers.find(t => t.name === ticker);
+	if (!tickerForUpdate) {
+		tickerForUpdate = {name: ticker, price}
+		savedTickers.push(tickerForUpdate);
+	}
+	tickerForUpdate.price = price;
+	localStorage.setItem("tickers", JSON.stringify(savedTickers));
+}
+
+function deleteFromLocalStorage(ticker) {
+	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
+	const updatedTickers = savedTickers.filter(t => t.name !== ticker);
+	localStorage.setItem("tickers", JSON.stringify(updatedTickers));
+}
 
 const switchToLocalStorage = () => {
 	console.log('New page of app')
@@ -81,15 +99,12 @@ export function getTickersFromLocalStorage() {
 	return JSON.parse(savedTickers);
 }
 
-export function updateLocalStorage(tickers) {
-	const store = JSON.stringify(tickers);
-	localStorage.setItem("tickers", store);
-}
-
 export function subscribeToTicker(ticker, cb) {
 	const subscribers = tickersHandlers.get(ticker) || [];
 	tickersHandlers.set(ticker, [...subscribers, cb]);
 	subscribeToTickerOnWs(ticker);
+	updateLocalStorage(ticker, '--');
+	console.log(tickersHandlers);
 }
 
 // TODO catch error if subscribers haven't cb
@@ -102,6 +117,8 @@ export function unsubscribeFromTicker(ticker, cbName) {
 		);
 	} else {
 		tickersHandlers.delete(ticker);
+		deleteFromLocalStorage(ticker);
+		console.log('Deleting...')
 	}
 	unSubscribeFromTickerOnWs(ticker);
 }

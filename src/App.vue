@@ -201,7 +201,6 @@
 <script>
 import {
   getTickersFromLocalStorage,
-  updateLocalStorage,
   getTickersList,
   subscribeToTicker,
   unsubscribeFromTicker,
@@ -317,9 +316,6 @@ export default {
       subscribeToTicker(ticker.name, (tickerName, newPrice) =>
         this.updateTicker(tickerName, newPrice)
       );
-      subscribeToTicker(ticker.name, () => {
-        updateLocalStorage(this.tickers);
-      })
     });
   },
 
@@ -354,19 +350,15 @@ export default {
           this.updateTicker(tickerName, newPrice)
         );
 
-        console.log(JSON.stringify(this.tickers))
-
-        updateLocalStorage(this.tickers);
-
         this.ticker = "";
       }
     },
 
     handleDelete(tickerToRemove) {
+			console.log(tickerToRemove.name)
       if (tickerToRemove === this.sel) this.sel = null;
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
-      unsubscribeFromTicker(tickerToRemove.name);
-      updateLocalStorage(this.tickers);
+			unsubscribeFromTicker(tickerToRemove.name);
     },
 
     handleSelect(tickerToSelect) {
