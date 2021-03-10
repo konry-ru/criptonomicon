@@ -202,6 +202,7 @@
 import {
   getTickersFromLocalStorage,
   getTickersList,
+	setHandlerForNewTickers,
   subscribeToTicker,
   unsubscribeFromTicker,
 } from "./api";
@@ -310,10 +311,12 @@ export default {
       this.page = windowData.page;
     }
 
-		setInterval(() => {
-			this.tickers = getTickersFromLocalStorage();
-		}, 3000);
-    
+		this.tickers = getTickersFromLocalStorage();
+
+		setHandlerForNewTickers((tickerName, newPrice) => {
+			this.updateTicker(tickerName, newPrice);
+		})
+
     this.tickers.forEach((ticker) => {
       subscribeToTicker(ticker.name, (tickerName, newPrice) =>
         this.updateTicker(tickerName, newPrice)
@@ -323,9 +326,15 @@ export default {
 
   methods: {
     updateTicker(tickerName, price) {
-      this.tickers
-        .filter((t) => t.name === tickerName)
-        .forEach((t) => (t.price = price));
+			const tickerForUpdate = this.tickers.filter(t => t.name === tickerName);
+			if(tickerForUpdate.length) {
+				tickerForUpdate.forEach(t => (t.price = price));
+			} else {
+				this.tickers.push({
+					name: tickerName,
+					price,
+				})
+			}
     },
 
     formatedTickerOutput(price) {

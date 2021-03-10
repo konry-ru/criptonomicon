@@ -1,6 +1,7 @@
 const API_KEY = 'd8ed30cc8bba73494b4a9993a9ab47fc88562bee4c5ff7727538e1d02cbcda4f';
 
 const tickersHandlers = new Map();
+const tickersHandlersList = [];
 const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`);
 const AGGREGATE_INDEX = "5";
 const TOO_MANY_SOCETS_PER_CLIENT = "429";
@@ -36,7 +37,7 @@ socket.addEventListener('error', function (event) {
 function updateLocalStorageByWs(ticker, price) {
 	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
 	let tickerForUpdate = savedTickers.find(t => t.name === ticker);
-	if(tickerForUpdate) {
+	if (tickerForUpdate) {
 		tickerForUpdate.price = price;
 	}
 	localStorage.setItem("tickers", JSON.stringify(savedTickers));
@@ -44,8 +45,8 @@ function updateLocalStorageByWs(ticker, price) {
 
 function updateLocalStorage(ticker) {
 	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
-	if(!savedTickers.find(t => t.name ===ticker)) {
-		savedTickers.push({name: ticker, price: "--"});
+	if (!savedTickers.find(t => t.name === ticker)) {
+		savedTickers.push({ name: ticker, price: "--" });
 	}
 	localStorage.setItem("tickers", JSON.stringify(savedTickers));
 }
@@ -57,14 +58,31 @@ function deleteFromLocalStorage(ticker) {
 }
 
 const switchToLocalStorage = () => {
-	console.log('New page of app')
 	window.addEventListener('storage', (evt) => {
 		const tickersStorage = JSON.parse(evt.newValue);
+		const tickersStorageKeys = tickersStorage.map(ticker => ticker.name);
+		console.log(tickersStorageKeys)
+		console.log(tickersHandlers.keys());
+		for (const key of tickersHandlers.keys()) {
+			console.log(key)
+			console.log(tickersStorageKeys.includes(key))
+			if (!(tickersStorageKeys.includes(key))) {
+				tickersHandlers.delete(key);
+				console.log(tickersHandlers)
+			}
+		}
 		tickersStorage.forEach((ticker) => {
+			if (!tickersHandlers.has(ticker.name)) {
+				tickersHandlers.set(ticker.name, tickersHandlersList);
+			}
 			const handlers = tickersHandlers.get(ticker.name) ?? [];
 			handlers.forEach(fn => fn(ticker.name, ticker.price));
 		});
 	});
+}
+
+export const setHandlerForNewTickers = (cb) => {
+	tickersHandlersList.push(cb);
 }
 
 export const getTickersList = () =>
@@ -109,7 +127,7 @@ export function subscribeToTicker(ticker, cb) {
 	const subscribers = tickersHandlers.get(ticker) || [];
 	tickersHandlers.set(ticker, [...subscribers, cb]);
 	subscribeToTickerOnWs(ticker);
-	updateLocalStorage(ticker, '--');
+	updateLocalStorage(ticker);
 	console.log(tickersHandlers);
 }
 
