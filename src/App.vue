@@ -202,7 +202,6 @@
 import {
   getTickersFromLocalStorage,
   getTickersList,
-	setHandlerForNewTickers,
   subscribeToTicker,
   unsubscribeFromTicker,
 } from "./api";
@@ -312,10 +311,6 @@ export default {
     }
 
 		this.tickers = getTickersFromLocalStorage();
-
-		setHandlerForNewTickers((tickerName, newPrice) => {
-			this.updateTicker(tickerName, newPrice);
-		})
 
     this.tickers.forEach((ticker) => {
       subscribeToTicker(ticker.name, (tickerName, newPrice) =>
