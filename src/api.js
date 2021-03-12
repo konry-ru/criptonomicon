@@ -1,20 +1,28 @@
 const API_KEY = 'd8ed30cc8bba73494b4a9993a9ab47fc88562bee4c5ff7727538e1d02cbcda4f';
 
 const tickersHandlers = new Map();
+const activeTickers = new Set();
 const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`);
 const AGGREGATE_INDEX = "5";
-const TOO_MANY_SOCETS_PER_CLIENT = "429";
+
+let isMainPage = false;
 
 // TODO [ ] (5 <заказчик>) Добавить возможность открытия приложения в новых вкладках
 // TODO [ ] --- через localStorage (вынести работу с localstorage in api.js)
 // TODO [ ] --- через BroadCastChannel
 
-const setMainPage = () => {
-	localStorage.setItem("mainPage", "true");
-	sessionStorage.setItem("mainPage", "true");
+const updateTickersInLocalStorage = (cb) => {
 	const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
-	savedTickers.forEach(t => t.counter = 0);
+	cb(savedTickers);
 	localStorage.setItem("tickers", JSON.stringify(savedTickers));
+}
+
+const setMainPage = () => {
+	isMainPage = true;
+	localStorage.setItem("mainPage", "true");
+	updateTickersInLocalStorage((tickers) => {
+		tickers.forEach(t => t.counter = 0);
+	})
 }
 
 const deleteMainPage = () => {
@@ -25,38 +33,68 @@ if (!localStorage.getItem("mainPage")) {
 	setMainPage()
 }
 
-const isMainPage = (localStorage.getItem("mainPage") && sessionStorage.getItem("mainPage"))
-	? true
-	: false;
+const checkLocalStorage = () => {
+	const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
+	savedTickers.forEach(ticker => {
+		if (!activeTickers.has(ticker.name)) {
+			subscribeToTickerOnWs(ticker.name);
+		}
+	});
+	activeTickers.forEach(tickerName => {
+		if (!savedTickers.find(t => t.name === tickerName)) {
+			activeTickers.delete(tickerName);
+			unSubscribeFromTickerOnWs(tickerName);
+		}
+	})
+}
+
+const reduceTickerCounter = (tickerName) => {
+	const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
+	const ticker = savedTickers.find(t => t.name === tickerName);
+	return --ticker.counter;
+}
+
+console.log('I am a main page :)', isMainPage);
 
 if (isMainPage) {
+	socket.addEventListener("message", e => {
+		const { TYPE: type, FROMSYMBOL: currency, PRICE: newPrice } = JSON.parse(e.data);
+
+		if (type !== AGGREGATE_INDEX) {
+			return;
+		}
+		if (!newPrice) {
+			return;
+		}
+		const handlers = tickersHandlers.get(currency) ?? [];
+		handlers.forEach(fn => fn(currency, newPrice));
+		updateLocalStorageByWs(currency, newPrice);
+	});
+
+	socket.addEventListener('error', function (event) {
+		console.log('Поймал ошибку от ВебСокета ;) ', event);
+	});
+
+	const listenLocalStorage = setInterval(() => {
+		checkLocalStorage();
+	}, 3000);
+
 	window.onunload = () => {
 		deleteMainPage();
+		clearInterval(listenLocalStorage);
 	}
 }
 
-socket.addEventListener("message", e => {
-	const { TYPE: type, FROMSYMBOL: currency, PRICE: newPrice } = JSON.parse(e.data);
+if (!isMainPage) {
+	window.addEventListener('storage', (evt) => {
+		const tickersStorage = JSON.parse(evt.newValue);
+		tickersStorage.forEach((ticker) => {
+			const handlers = tickersHandlers.get(ticker.name) ?? [];
+			handlers.forEach(fn => fn(ticker.name, ticker.price));
+		});
+	});
+}
 
-	if (type === TOO_MANY_SOCETS_PER_CLIENT) {
-		switchToLocalStorage();
-		return;
-	}
-
-	if (type !== AGGREGATE_INDEX) {
-		return;
-	}
-	if (!newPrice) {
-		return;
-	}
-	const handlers = tickersHandlers.get(currency) ?? [];
-	handlers.forEach(fn => fn(currency, newPrice));
-	updateLocalStorageByWs(currency, newPrice);
-});
-
-socket.addEventListener('error', function (event) {
-	console.log('WebSocket error: ', event);
-});
 
 function updateLocalStorageByWs(ticker, price) {
 	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
@@ -78,21 +116,12 @@ function updateLocalStorage(ticker) {
 	localStorage.setItem("tickers", JSON.stringify(savedTickers));
 }
 
-function deleteFromLocalStorage(ticker) {
+function deleteFromLocalStorage(tickerName) {
 	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
 	const updatedTickers = savedTickers.filter(t =>
-		(t.name !== ticker || t.counter !== 0));
+		(t.name !== tickerName));
+	console.log(updatedTickers)
 	localStorage.setItem("tickers", JSON.stringify(updatedTickers));
-}
-
-const switchToLocalStorage = () => {
-	window.addEventListener('storage', (evt) => {
-		const tickersStorage = JSON.parse(evt.newValue);
-		tickersStorage.forEach((ticker) => {
-			const handlers = tickersHandlers.get(ticker.name) ?? [];
-			handlers.forEach(fn => fn(ticker.name, ticker.price));
-		});
-	});
 }
 
 export const getTickersList = () =>
@@ -114,17 +143,19 @@ function sendToWebSocket(message) {
 	}, { once: true });
 }
 
-function subscribeToTickerOnWs(ticker) {
+function subscribeToTickerOnWs(tickerName) {
+	activeTickers.add(tickerName);
 	sendToWebSocket({
 		action: "SubAdd",
-		subs: [`5~CCCAGG~${ticker}~USD`]
+		subs: [`5~CCCAGG~${tickerName}~USD`]
 	});
 }
 
-function unSubscribeFromTickerOnWs(ticker) {
+function unSubscribeFromTickerOnWs(tickerName) {
+	activeTickers.delete(tickerName)
 	sendToWebSocket({
 		action: "SubRemove",
-		subs: [`5~CCCAGG~${ticker}~USD`]
+		subs: [`5~CCCAGG~${tickerName}~USD`]
 	});
 }
 
@@ -135,25 +166,27 @@ export function getTickersFromLocalStorage() {
 	return isMainPage ? JSON.parse(savedTickers) : [];
 }
 
-export function subscribeToTicker(ticker, cb) {
-	const subscribers = tickersHandlers.get(ticker) || [];
-	tickersHandlers.set(ticker, [...subscribers, cb]);
-	subscribeToTickerOnWs(ticker);
-	updateLocalStorage(ticker);
+export function subscribeToTicker(tickerName, cb) {
+	const subscribers = tickersHandlers.get(tickerName) || [];
+	tickersHandlers.set(tickerName, [...subscribers, cb]);
+	subscribeToTickerOnWs(tickerName);
+	updateLocalStorage(tickerName);
 }
 
 // TODO catch error if subscribers haven't cb
-export function unsubscribeFromTicker(ticker, cbName) {
-	const subscribers = tickersHandlers.get(ticker) || [];
+export function unsubscribeFromTicker(tickerName, cbName) {
+	const subscribers = tickersHandlers.get(tickerName) || [];
 	if (cbName) {
 		tickersHandlers.set(
-			ticker,
+			tickerName,
 			subscribers.filter(fn => fn.name !== cbName)
 		);
 	} else {
-		tickersHandlers.delete(ticker);
-		deleteFromLocalStorage(ticker);
-		console.log('Deleting...')
+		tickersHandlers.delete(tickerName);
+		if (reduceTickerCounter(tickerName) === 0) {
+			deleteFromLocalStorage(tickerName);
+			// console.log('Deleting...')
+			// unSubscribeFromTickerOnWs(ticker);
+		}
 	}
-	unSubscribeFromTickerOnWs(ticker);
 }
