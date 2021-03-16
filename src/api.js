@@ -1,15 +1,12 @@
 import { listenWS, subscribeToTickerOnWs, unSubscribeFromTickerOnWs } from './api_websocket'
 import {
-	deleteMainPage, checkLocalStorage, updateLocalStorage,
-	reduceTickerCounter, deleteFromLocalStorage, setMainPageByLS, listenLS
+	checkLocalStorage, addTickerInLocalStorage, reduceTickerCounter,
+	deleteFromLocalStorage, listenLS
 } from './api_localstorage';
+import {setMainPageByLS, deleteMainPageFromLS} from './main_page_control';
 
 const tickersHandlers = new Map();
-
-
 let isMainPage = setMainPageByLS();
-console.log('I is mainPage ', isMainPage);
-
 
 // TODO [ ] --- через BroadCastChannel
 
@@ -34,7 +31,7 @@ if (isMainPage) {
 	}, 3000);
 
 	window.onunload = () => {
-		deleteMainPage();
+		deleteMainPageFromLS();
 		clearInterval(listenLocalStorage);
 	}
 }
@@ -62,16 +59,7 @@ export function subscribeToTicker(tickerName, cb) {
 	const subscribers = tickersHandlers.get(tickerName) || [];
 	tickersHandlers.set(tickerName, [...subscribers, cb]);
 	subscribeToTickerOnWs(tickerName);
-	updateLocalStorage(tickerName);
-}
-
-export function updateLocalStorageByWs(ticker, price) {
-	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
-	let tickerForUpdate = savedTickers.find(t => t.name === ticker);
-	if (tickerForUpdate) {
-		tickerForUpdate.price = price;
-	}
-	localStorage.setItem("tickers", JSON.stringify(savedTickers));
+	addTickerInLocalStorage(tickerName);
 }
 
 // TODO catch error if subscribers haven't cb

@@ -1,33 +1,11 @@
 const activeTickers = new Set();
 
-const checkMainPageInLS = () => {
-    return localStorage.getItem("mainPage") !== null;
-}
 
-export const setMainPageByLS = () => {
-    if (!checkMainPageInLS()) {
-        localStorage.setItem("mainPage", "true");
-        updateTickersInLocalStorage((tickers) => {
-            tickers.forEach(t => t.counter = 0);
-        })
-        return true;
-    } else {
-        return false;
-    }
-
-}
-
-export const updateTickersInLocalStorage = (cb) => {
+const updateTickersInLocalStorage = (item, cb) => {
     const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
-    cb(savedTickers);
+    cb(item, savedTickers);
     localStorage.setItem("tickers", JSON.stringify(savedTickers));
 }
-
-
-export const deleteMainPage = () => {
-    localStorage.removeItem("mainPage");
-}
-
 
 export const checkLocalStorage = (cb) => {
     const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
@@ -63,16 +41,29 @@ export const listenLS = (cb) => {
     });
 }
 
-export function updateLocalStorage(tickerName) {
-    activeTickers.add(tickerName);
+export function updateLocalStorageByWs(ticker, price) {
     const savedTickers = JSON.parse(localStorage.getItem("tickers"));
+    let tickerForUpdate = savedTickers.find(t => t.name === ticker);
+    if (tickerForUpdate) {
+        tickerForUpdate.price = price;
+    }
+    localStorage.setItem("tickers", JSON.stringify(savedTickers));
+}
+
+const addNewTicker = (tickerName, savedTickers) => {
     const tickerInStorage = savedTickers.find(t => t.name === tickerName);
     if (tickerInStorage) {
         tickerInStorage.counter++;
     } else {
         savedTickers.push({ name: tickerName, price: "--", counter: 1 });
     }
-    localStorage.setItem("tickers", JSON.stringify(savedTickers));
+}
+
+export function addTickerInLocalStorage(tickerName) {
+    activeTickers.add(tickerName);
+    updateTickersInLocalStorage(tickerName, () => {
+        addNewTicker(tickerName);
+    })
 }
 
 export function deleteFromLocalStorage(tickerName) {

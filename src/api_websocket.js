@@ -1,4 +1,4 @@
-import {updateLocalStorageByWs} from './api'
+import {updateLocalStorageByWs} from './api_localstorage'
 
 const API_KEY = 'd8ed30cc8bba73494b4a9993a9ab47fc88562bee4c5ff7727538e1d02cbcda4f';
 
