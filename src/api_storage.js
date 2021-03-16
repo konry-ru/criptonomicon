@@ -1,54 +1,56 @@
+import {
+	updateTickersInStorage, changeTickersInStorage, getTickersFromStorage
+} from './update_localstorage';
+
 const activeTickers = new Set();
 
 // TODO API metods must be max short.
 // TODO API и их названия не должны говорить о внутренней реализации
 // TODO вся внутренняя логика должна быть во внтренних функциях.
 
-export const reduceTickerCounter = (tickerName) => {
-	const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
+const counterDecrement = (savedTickers, tickerName) => {
 	const ticker = savedTickers.find(t => t.name === tickerName);
-	console.log('Уменьшаем на 1 счетчик ', ticker);
 	ticker.counter--;
-	localStorage.setItem("tickers", JSON.stringify(savedTickers));
-	return ticker.counter;
 }
 
-
-export const updateTickersInStorage = (cb) => {
-	const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
-	cb(savedTickers);
-	localStorage.setItem("tickers", JSON.stringify(savedTickers));
-}
-
-
-const addNewTickerInLocalStorage = (tickerName) => {
-	const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
+const saveTicker = (savedTickers, tickerName) => {
 	const tickerInStorage = savedTickers.find(t => t.name === tickerName);
 	if (tickerInStorage) {
 		tickerInStorage.counter++;
 	} else {
 		savedTickers.push({ name: tickerName, price: "--", counter: 1 });
 	}
-	localStorage.setItem("tickers", JSON.stringify(savedTickers));
+}
+
+const deleteTicker = (savedTickers, tickerName) => {
+	const updatedTickers = savedTickers.filter(t =>
+		(t.name !== tickerName));
+	return updatedTickers;
+}
+
+export const reduceTickerCounter = (tickerName) => {
+	updateTickersInStorage((savedTickers) => {
+		counterDecrement(savedTickers, tickerName)
+	})
 }
 
 export function addTickerInStorage(tickerName) {
 	activeTickers.add(tickerName);
-	addNewTickerInLocalStorage(tickerName);
+	updateTickersInStorage((savedTickers) => {
+		saveTicker(savedTickers, tickerName);
+	});
 }
 
-export function deleteFromLocalStorage(tickerName) {
-	const savedTickers = JSON.parse(localStorage.getItem("tickers"));
-	const updatedTickers = savedTickers.filter(t =>
-		(t.name !== tickerName));
-	console.log(updatedTickers)
-	localStorage.setItem("tickers", JSON.stringify(updatedTickers));
+export function deleteFromStorage(tickerName) {
+	changeTickersInStorage((savedTickers) => {
+		deleteTicker(savedTickers, tickerName);
+	});
 }
 
 //*  Функция проверяет появление и удаление тикеров в localstorage
 //*  Это нужно для главной страницы, которая не получает событий изменения в ls.
-export const checkLocalStorage = (cb) => {
-	const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
+export const syncDataWithStorage = (cb) => {
+	const savedTickers = getTickersFromStorage();
 	savedTickers.forEach(ticker => {
 		if (!activeTickers.has(ticker.name)) {
 			activeTickers.add(ticker.name);

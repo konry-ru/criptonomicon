@@ -1,7 +1,8 @@
 import { listenWS, subscribeToTickerOnWs, unSubscribeFromTickerOnWs } from './api_websocket'
 import {listenLS} from './localstorage_listener';
-import { addTickerInStorage, reduceTickerCounter, deleteFromLocalStorage, checkLocalStorage } from './api_localstorage';
+import { addTickerInStorage, reduceTickerCounter, deleteFromStorage, syncDataWithStorage } from './api_storage';
 import {getIsMainPage, deleteMainPageFromLS} from './main_page_control';
+import { getTickerCounter } from './update_localstorage';
 
 const tickersHandlers = new Map();
 let isMainPage = getIsMainPage();
@@ -22,7 +23,7 @@ if (isMainPage) {
 	});
 
 	const listenLocalStorage = setInterval(() => {
-		checkLocalStorage((tickerName, flag) => {
+		syncDataWithStorage((tickerName, flag) => {
 			if (flag) {
 				subscribeToTickerOnWs(tickerName);
 			} else {
@@ -73,11 +74,10 @@ export function unsubscribeFromTicker(tickerName, cbName) {
 		);
 	} else {
 		tickersHandlers.delete(tickerName);
-		const counter = reduceTickerCounter(tickerName);
+		reduceTickerCounter(tickerName);
+		const counter = getTickerCounter();
 		if (counter === 0) {
-			deleteFromLocalStorage(tickerName);
-			// console.log('Deleting...')
-			// unSubscribeFromTickerOnWs(ticker);
+			deleteFromStorage(tickerName);
 		}
 	}
 }

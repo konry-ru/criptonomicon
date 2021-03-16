@@ -1,4 +1,4 @@
-import { updateTickersInStorage } from './api_localstorage';
+import { updateTickersInStorage } from './update_localstorage';
 
 let isMainPage = false;
 
