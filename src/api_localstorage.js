@@ -1,5 +1,9 @@
 const activeTickers = new Set();
 
+// TODO API metods must be max short.
+// TODO API и их названия не должны говорить о внутренней реализации
+// TODO вся внутренняя логика должна быть во внтренних функциях.
+
 export const reduceTickerCounter = (tickerName) => {
 	const savedTickers = JSON.parse(localStorage.getItem("tickers")) || [];
 	const ticker = savedTickers.find(t => t.name === tickerName);
